@@ -1,9 +1,6 @@
 package ClassManager.data;
 
 import ClassManager.Classes;
-import StudentManager.Student;
-import StudentManager.data.StudentDatabase;
-
 import java.util.ArrayList;
 
 public class ClassDatabase {
@@ -14,73 +11,46 @@ public class ClassDatabase {
 
     public static ClassDatabase getClassDB(){ return classBD; }
 
-    //Tìm kiếm lớp theo mã lớp
+    public ArrayList<Classes> getAllClasses() {
+        return classes;
+    }
+
     public Classes findClassByID(String classID){
         for (Classes c : classes){
-            if (c.getClassID().equals(classID)){
+            if (c.getClassID().equalsIgnoreCase(classID)){
                 return c;
             }
         }
         return null;
     }
 
-    //Tìm kiếm lớp theo tên lớp
-    public Classes findClassByName(String className){
-        for (Classes c : classes){
-            if (c.getClassID().equalsIgnoreCase(className)){
-                return c;
-            }
+    public void addNewClass(Classes c) throws Exception {
+        if (findClassByID(c.getClassID()) != null) {
+            throw new Exception("Mã lớp " + c.getClassID() + " đã tồn tại!");
         }
-        return null;
-    }
-
-    //In danh sách tất cả các lớp
-    public void showAllClasses(){
-        if (classes.isEmpty()){
-            System.out.println("Danh sách các lớp trống!");
-            return;
-        }else{
-            for (Classes c : classes){
-                System.out.println("Lớp: " + c.getClassName() + " (" + c.getClassID() + ") - " + c.getStudentNumber() + " học sinh");
-            }
-        }
-
-    }
-
-    //Thêm lớp mới
-    public void addNewClass (Classes c){
         classes.add(c);
     }
 
-    //Thêm học sinh vào lớp
-    public void addStudentToClass(String studentID, String classID){
-        Student student = StudentDatabase.getStudentDB().findByID(studentID);
-        Classes findedClass = findClassByID(classID);
-        if (findedClass == null){
-            System.out.println("Không có lớp " + classID);
-        }
-        else {
-            int currentStudentNumber = findedClass.getStudents().size();  //Sĩ số học sinh trước khi thêm
-            findedClass.getStudents().add(student);
-            findedClass.setStudentNumber(findedClass.getStudents().size());
+    public void updateClass(String oldID, String newID, String newName) throws Exception {
+        Classes old = findClassByID(oldID);
+        if (old == null) throw new Exception("Không tìm thấy lớp để sửa!");
 
-            //So sánh sĩ số mới, nếu có tăng lên so với sĩ số cũ thì in ra dòng "thêm thành công"
-            if (findedClass.getStudentNumber() > currentStudentNumber){
-                System.out.println("Thêm học sinh vào lớp " + classID + " thành công!");
-            }else{
-                System.out.println("Lỗi, chưa thể thêm học sinh!");
+        // Nếu đổi mã lớp, check trùng
+        if (!oldID.equalsIgnoreCase(newID)) {
+            if (findClassByID(newID) != null) {
+                throw new Exception("Mã lớp mới bị trùng!");
             }
-
         }
+
+        old.setClassID(newID);
+        old.setClassName(newName);
     }
 
-    //Xóa lớp theo mã lớp
-    public void deleteClass (String classID){
+    public void deleteClass(String classID) throws Exception {
         Classes c = findClassByID(classID);
-        if (c != null){
-            classes.remove(c);
+        if (c == null){
+            throw new Exception("Không tìm thấy lớp " + classID);
         }
+        classes.remove(c);
     }
-
-
 }

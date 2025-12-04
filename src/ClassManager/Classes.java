@@ -1,10 +1,12 @@
 package ClassManager;
 
 import StudentManager.Student;
-
+import java.io.Serializable;
 import java.util.ArrayList;
 
 public class Classes {
+    private static final long serialVersionUID = 1L;
+
     private String className;
     private String classID;
     private int studentNumber;
@@ -24,6 +26,7 @@ public class Classes {
 
     public String getClassName(){ return className;}
     public String getClassID(){ return classID;}
+
     public int getStudentNumber(){ return studentNumber;}
     public ArrayList<Student> getStudents() { return students;}
 }

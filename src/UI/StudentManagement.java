@@ -17,6 +17,10 @@ import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 public class StudentManagement extends JFrame {
     private DefaultTableModel tableModel;
@@ -27,9 +31,12 @@ public class StudentManagement extends JFrame {
     // Input fields
     private JTextField txtId, txtName, txtClass;
     private JComboBox<String> cboGender;
-    private JTextField txtRegularScore; // Điểm thường xuyên (Hệ số 1)
-    private JTextField txtMidtermScore; // Điểm giữa kì (Hệ số 2)
-    private JTextField txtFinalScore;   // Điểm cuối kì (Hệ số 3)
+    private JTextField txtRegularScore;
+    private JTextField txtMidtermScore;
+    private JTextField txtFinalScore;
+
+    // Component lọc lớp (Khai báo biến toàn cục để dùng được trong các hàm)
+    private JComboBox<String> cboFilter;
 
     // Colors
     private final Color primaryColor = new Color(70, 70, 70);
@@ -54,7 +61,7 @@ public class StudentManagement extends JFrame {
         // 4. Button Panel (Bottom)
         add(createButtonPanel(), BorderLayout.SOUTH);
 
-        // --- QUAN TRỌNG: Tải dữ liệu thật từ Database ---
+        // --- Tải dữ liệu thật và cập nhật bộ lọc ---
         loadDataFromDatabase();
     }
 
@@ -106,7 +113,7 @@ public class StudentManagement extends JFrame {
         content.setBackground(Color.WHITE);
         content.setBorder(new EmptyBorder(20, 20, 20, 20));
 
-        // --- 1. THÔNG TIN CÁ NHÂN ---
+        // 1. Thông tin cá nhân
         JLabel lblInfo = new JLabel("1. Thông tin học sinh");
         lblInfo.setFont(new Font("Arial", Font.BOLD, 14));
         lblInfo.setForeground(primaryColor);
@@ -114,7 +121,6 @@ public class StudentManagement extends JFrame {
         content.add(lblInfo);
         content.add(Box.createRigidArea(new Dimension(0, 15)));
 
-        // Hàng gom: Mã HS & Giới tính
         JPanel row1 = new JPanel(new GridLayout(1, 2, 10, 0));
         row1.setBackground(Color.WHITE);
         row1.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -129,7 +135,6 @@ public class StudentManagement extends JFrame {
         content.add(row1);
         content.add(Box.createRigidArea(new Dimension(0, 10)));
 
-        // Họ tên & Lớp
         content.add(createFieldPanel("Họ và tên:", txtName = createTextField()));
         content.add(Box.createRigidArea(new Dimension(0, 10)));
         content.add(createFieldPanel("Lớp:", txtClass = createTextField()));
@@ -140,7 +145,7 @@ public class StudentManagement extends JFrame {
         content.add(sep);
         content.add(Box.createRigidArea(new Dimension(0, 25)));
 
-        // --- 2. NHẬP ĐIỂM ---
+        // 2. Nhập điểm
         JLabel lblScore = new JLabel("2. Nhập điểm chi tiết");
         lblScore.setFont(new Font("Arial", Font.BOLD, 14));
         lblScore.setForeground(primaryColor);
@@ -182,7 +187,7 @@ public class StudentManagement extends JFrame {
         return tf;
     }
 
-    // ================= TABLE PANEL =================
+    // ================= TABLE PANEL (SỬA PHẦN LỌC LỚP) =================
     private JPanel createTablePanel() {
         JPanel panel = new JPanel(new BorderLayout(15, 15));
         panel.setBackground(secondaryColor);
@@ -200,11 +205,16 @@ public class StudentManagement extends JFrame {
         searchPanel.add(txtSearch);
 
         searchPanel.add(new JLabel("  Lọc lớp:"));
-        JComboBox<String> cboFilter = new JComboBox<>(new String[]{"Tất cả", "6A1", "7A2", "8A1", "9A3"});
+
+        // --- SỬA Ở ĐÂY: Khởi tạo rỗng, dữ liệu sẽ được nạp sau ---
+        cboFilter = new JComboBox<>();
+        cboFilter.addItem("Tất cả");
+
         cboFilter.addActionListener(e -> {
+            if (cboFilter.getSelectedItem() == null) return;
             String selected = cboFilter.getSelectedItem().toString();
             if (selected.equals("Tất cả")) rowSorter.setRowFilter(null);
-            else rowSorter.setRowFilter(RowFilter.regexFilter(selected, 2));
+            else rowSorter.setRowFilter(RowFilter.regexFilter(selected, 2)); // Cột 2 là Lớp
         });
         searchPanel.add(cboFilter);
 
@@ -236,7 +246,6 @@ public class StudentManagement extends JFrame {
         headerRenderer.setHorizontalAlignment(JLabel.CENTER);
         for (int i = 0; i < table.getColumnCount(); i++) table.getColumnModel().getColumn(i).setHeaderRenderer(headerRenderer);
 
-        // Cell Styling & Tô màu điểm
         DefaultTableCellRenderer cellRenderer = new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
@@ -276,6 +285,7 @@ public class StudentManagement extends JFrame {
             public void mouseClicked(MouseEvent e) {
                 int row = table.getSelectedRow();
                 if (row >= 0) {
+                    // Chuyển đổi index khi đang lọc
                     loadDataToForm(table.convertRowIndexToModel(row));
                 }
             }
@@ -328,19 +338,45 @@ public class StudentManagement extends JFrame {
         return btn;
     }
 
-    // ================= BUSINESS LOGIC (KẾT NỐI DATABASE THẬT) =================
+    // ================= BUSINESS LOGIC =================
 
-    // Hàm quan trọng: Đọc dữ liệu từ cả StudentDatabase và GradeDatabase
+    // --- HÀM MỚI: Tự động cập nhật bộ lọc lớp dựa trên danh sách học sinh ---
+    private void updateClassFilter() {
+        // 1. Lưu lại lựa chọn hiện tại để không bị reset bất ngờ
+        String currentSelection = (cboFilter.getSelectedItem() != null) ? cboFilter.getSelectedItem().toString() : "Tất cả";
+
+        // 2. Xóa hết item cũ
+        cboFilter.removeAllItems();
+        cboFilter.addItem("Tất cả");
+
+        // 3. Quét toàn bộ học sinh để lấy ra các tên lớp (Không trùng lặp)
+        Set<String> uniqueClasses = new HashSet<>();
+        for (Student s : StudentDatabase.getStudentDB().getAllStudents()) {
+            if (s.getStudentClass() != null && !s.getStudentClass().trim().isEmpty()) {
+                uniqueClasses.add(s.getStudentClass().trim());
+            }
+        }
+
+        // 4. Sắp xếp danh sách lớp cho đẹp (6A1, 7A2...)
+        List<String> sortedList = new ArrayList<>(uniqueClasses);
+        Collections.sort(sortedList);
+
+        // 5. Thêm vào ComboBox
+        for (String className : sortedList) {
+            cboFilter.addItem(className);
+        }
+
+        // 6. Khôi phục lại lựa chọn cũ nếu lớp đó vẫn còn tồn tại
+        if (currentSelection.equals("Tất cả") || uniqueClasses.contains(currentSelection)) {
+            cboFilter.setSelectedItem(currentSelection);
+        }
+    }
+
     private void loadDataFromDatabase() {
-        // Xóa sạch bảng cũ
         tableModel.setRowCount(0);
-
-        // 1. Lấy danh sách học sinh từ DB
         ArrayList<Student> list = StudentDatabase.getStudentDB().getAllStudents();
 
-        // 2. Duyệt từng học sinh để hiển thị
         for (Student s : list) {
-            // Lấy điểm tương ứng của học sinh này từ GradeDatabase
             double reg = 0, mid = 0, fin = 0;
             try {
                 Grade g = GradeDatabase.getGradeDB().getGradeByStudentID(s.getStudentID());
@@ -349,17 +385,17 @@ public class StudentManagement extends JFrame {
                     mid = g.getMidtermScore();
                     fin = g.getFinalScore();
                 }
-            } catch (Exception e) {
-                // Chưa có điểm thì để 0
-            }
+            } catch (Exception ignored) {}
             double avg = calculateAvg(reg, mid, fin);
 
-            // Thêm vào bảng
             tableModel.addRow(new Object[]{
                     s.getStudentID(), s.getStudentName(), s.getStudentClass(), s.getGender(),
                     reg, mid, fin, String.format("%.2f", avg), classify(avg)
             });
         }
+
+        // GỌI HÀM CẬP NHẬT LỌC LỚP Ở ĐÂY
+        updateClassFilter();
     }
 
     private void addStudent() {
@@ -370,19 +406,16 @@ public class StudentManagement extends JFrame {
             String className = txtClass.getText().trim();
             String gender = cboGender.getSelectedItem().toString();
 
-            // 1. Lưu thông tin Học sinh (Gọi Service)
             AddStudent service = new AddStudent();
             service.add(id, name, className, gender);
 
-            // 2. Lưu Điểm số (Gọi trực tiếp DB vì chưa sửa xong Service Grade)
             double reg = parseScore(txtRegularScore);
             double mid = parseScore(txtMidtermScore);
             double fin = parseScore(txtFinalScore);
             Grade newGrade = new Grade(id, reg, mid, fin);
             GradeDatabase.getGradeDB().addOrUpdateGrade(newGrade);
 
-            // 3. Tải lại bảng
-            loadDataFromDatabase();
+            loadDataFromDatabase(); // Refresh bảng & Bộ lọc
             clearFields();
             JOptionPane.showMessageDialog(this, "Thêm thành công!");
 
@@ -398,26 +431,23 @@ public class StudentManagement extends JFrame {
 
         try {
             int modelRow = table.convertRowIndexToModel(row);
-            String oldID = tableModel.getValueAt(modelRow, 0).toString(); // ID gốc
+            String oldID = tableModel.getValueAt(modelRow, 0).toString();
 
             String newId = txtId.getText().trim();
             String name = txtName.getText().trim();
             String className = txtClass.getText().trim();
             String gender = cboGender.getSelectedItem().toString();
 
-            // 1. Cập nhật thông tin Học sinh
             EditStudent service = new EditStudent();
             service.edit(oldID, newId, name, className, gender);
 
-            // 2. Cập nhật Điểm số
             double reg = parseScore(txtRegularScore);
             double mid = parseScore(txtMidtermScore);
             double fin = parseScore(txtFinalScore);
             Grade grade = new Grade(newId, reg, mid, fin);
             GradeDatabase.getGradeDB().addOrUpdateGrade(grade);
 
-            // 3. Tải lại bảng
-            loadDataFromDatabase();
+            loadDataFromDatabase(); // Refresh bảng & Bộ lọc
             clearFields();
             JOptionPane.showMessageDialog(this, "Cập nhật thành công!");
 
@@ -435,16 +465,11 @@ public class StudentManagement extends JFrame {
                 int modelRow = table.convertRowIndexToModel(row);
                 String id = tableModel.getValueAt(modelRow, 0).toString();
 
-                // 1. Xóa Học sinh
                 DeleteStudent service = new DeleteStudent();
                 service.delete(id);
+                try { GradeDatabase.getGradeDB().deleteGrade(id); } catch (Exception ignored) {}
 
-                // 2. Xóa Điểm
-                try {
-                    GradeDatabase.getGradeDB().deleteGrade(id);
-                } catch (Exception ignored) {} // Nếu chưa có điểm thì bỏ qua lỗi này
-
-                loadDataFromDatabase();
+                loadDataFromDatabase(); // Refresh bảng & Bộ lọc
                 clearFields();
                 JOptionPane.showMessageDialog(this, "Đã xóa thành công!");
 
@@ -454,7 +479,6 @@ public class StudentManagement extends JFrame {
         }
     }
 
-    // ================= UTILS =================
     private void clearFields() {
         txtId.setText(""); txtName.setText(""); txtClass.setText("");
         txtRegularScore.setText(""); txtMidtermScore.setText(""); txtFinalScore.setText("");

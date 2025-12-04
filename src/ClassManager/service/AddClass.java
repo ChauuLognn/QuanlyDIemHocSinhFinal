@@ -2,27 +2,16 @@ package ClassManager.service;
 
 import ClassManager.Classes;
 import ClassManager.data.ClassDatabase;
-import StudentManager.data.StudentDatabase;
-
-import java.util.Scanner;
 
 public class AddClass {
     private ClassDatabase classDB = ClassDatabase.getClassDB();
-    private StudentDatabase studentDB = StudentDatabase.getStudentDB();
-    Scanner sc = new Scanner(System.in);
 
-    //Thêm lớp mới
-    public void add(){
-        System.out.print("Nhập tên lớp mới: ");
-        String newClassName = sc.nextLine();
-        System.out.print("Nhập mã lớp mới: ");
-        String newClassID = sc.nextLine();
+    public void add(String id, String name) throws Exception {
+        if (id.isEmpty() || name.isEmpty()) {
+            throw new Exception("Mã lớp và Tên lớp là bắt buộc!");
+        }
 
-        Classes newClass = new Classes(newClassName, newClassID);
+        Classes newClass = new Classes(name, id);
         classDB.addNewClass(newClass);
-        System.out.println("Thêm lớp mới thành công!");
     }
-
-
-
 }

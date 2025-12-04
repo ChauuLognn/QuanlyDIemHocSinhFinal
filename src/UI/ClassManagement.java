@@ -1,5 +1,11 @@
 package UI;
 
+import ClassManager.Classes;
+import ClassManager.data.ClassDatabase;
+import ClassManager.service.AddClass;
+import ClassManager.service.DeleteClass;
+import ClassManager.service.EditClass;
+
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -8,6 +14,7 @@ import javax.swing.table.JTableHeader;
 import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.awt.event.*;
+import java.util.ArrayList;
 
 public class ClassManagement extends JFrame {
     private DefaultTableModel tableModel;
@@ -15,18 +22,17 @@ public class ClassManagement extends JFrame {
     private JTextField txtSearch;
     private TableRowSorter<DefaultTableModel> rowSorter;
 
-    // Input fields
-    private JTextField txtClassId, txtClassName, txtTeacher, txtAcademicYear;
-    private JSpinner spinnerCapacity;
+    // Input fields (Chỉ còn 2 trường)
+    private JTextField txtClassId, txtClassName;
     private JTextArea txtNote;
 
     // Colors
-    private Color primaryColor = new Color(70, 70, 70);
-    private Color secondaryColor = new Color(245, 245, 245);
+    private final Color primaryColor = new Color(70, 70, 70);
+    private final Color secondaryColor = new Color(245, 245, 245);
 
     public ClassManagement() {
         setTitle("Quản lý Lớp học");
-        setSize(1100, 700);
+        setSize(1000, 600); // Thu nhỏ cửa sổ lại cho gọn
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setLayout(new BorderLayout(0, 0));
@@ -43,8 +49,8 @@ public class ClassManagement extends JFrame {
         // 4. Bottom - Buttons
         add(createButtonPanel(), BorderLayout.SOUTH);
 
-        // Add dummy data
-        addSampleData();
+        // --- TẢI DỮ LIỆU ---
+        loadDataFromDatabase();
     }
 
     // ================= TOP BAR =================
@@ -59,7 +65,7 @@ public class ClassManagement extends JFrame {
         title.setForeground(Color.WHITE);
         topBar.add(title, BorderLayout.WEST);
 
-        JButton btnBack = new JButton("← Quay lại");
+        JButton btnBack = new JButton("← Quay lại Dashboard");
         btnBack.setFont(new Font("Arial", Font.BOLD, 12));
         btnBack.setForeground(Color.WHITE);
         btnBack.setBackground(new Color(100, 100, 100));
@@ -67,22 +73,18 @@ public class ClassManagement extends JFrame {
         btnBack.setBorderPainted(false);
         btnBack.setFocusPainted(false);
         btnBack.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btnBack.addActionListener(e -> backToDashboard());
-
-        // Hover effect
-        btnBack.addMouseListener(new MouseAdapter() {
-            public void mouseEntered(MouseEvent e) { btnBack.setBackground(new Color(120, 120, 120)); }
-            public void mouseExited(MouseEvent e) { btnBack.setBackground(new Color(100, 100, 100)); }
+        btnBack.addActionListener(e -> {
+            this.dispose();
+            new Dashboard().setVisible(true);
         });
-
         topBar.add(btnBack, BorderLayout.EAST);
         return topBar;
     }
 
-    // ================= INPUT PANEL =================
+    // ================= INPUT PANEL (ĐÃ RÚT GỌN) =================
     private JPanel createInputPanel() {
         JPanel mainPanel = new JPanel(new BorderLayout());
-        mainPanel.setPreferredSize(new Dimension(320, 0));
+        mainPanel.setPreferredSize(new Dimension(300, 0)); // Thu hẹp panel lại
         mainPanel.setBackground(Color.WHITE);
         mainPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, new Color(220, 220, 220)));
 
@@ -98,33 +100,16 @@ public class ClassManagement extends JFrame {
         content.add(lblInfo);
         content.add(Box.createRigidArea(new Dimension(0, 20)));
 
-        // Các trường nhập liệu
+        // Chỉ còn Mã lớp & Tên lớp
         content.add(createField("Mã lớp:", txtClassId = new JTextField()));
-        content.add(Box.createRigidArea(new Dimension(0, 10)));
+        content.add(Box.createRigidArea(new Dimension(0, 15)));
 
         content.add(createField("Tên lớp:", txtClassName = new JTextField()));
-        content.add(Box.createRigidArea(new Dimension(0, 10)));
-
-        content.add(createField("GVCN:", txtTeacher = new JTextField()));
-        content.add(Box.createRigidArea(new Dimension(0, 10)));
-
-        content.add(createField("Niên khóa:", txtAcademicYear = new JTextField("2023-2024")));
-        content.add(Box.createRigidArea(new Dimension(0, 10)));
-
-        // Sĩ số tối đa
-        JPanel pnlCap = new JPanel(new BorderLayout(0, 5));
-        pnlCap.setBackground(Color.WHITE);
-        pnlCap.add(new JLabel("Sĩ số tối đa:"), BorderLayout.NORTH);
-        spinnerCapacity = new JSpinner(new SpinnerNumberModel(45, 30, 60, 1));
-        pnlCap.add(spinnerCapacity, BorderLayout.CENTER);
-        pnlCap.setAlignmentX(Component.LEFT_ALIGNMENT);
-        pnlCap.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
-        content.add(pnlCap);
-        content.add(Box.createRigidArea(new Dimension(0, 10)));
+        content.add(Box.createRigidArea(new Dimension(0, 15)));
 
         // Ghi chú
         content.add(new JLabel("Ghi chú:"));
-        txtNote = new JTextArea(3, 20);
+        txtNote = new JTextArea(5, 20); // Tăng chiều cao lên chút
         txtNote.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
         JScrollPane scrollNote = new JScrollPane(txtNote);
         scrollNote.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -144,7 +129,7 @@ public class ClassManagement extends JFrame {
         return p;
     }
 
-    // ================= TABLE PANEL =================
+    // ================= TABLE PANEL (ĐÃ RÚT GỌN CỘT) =================
     private JPanel createTablePanel() {
         JPanel panel = new JPanel(new BorderLayout(15, 15));
         panel.setBackground(secondaryColor);
@@ -165,13 +150,13 @@ public class ClassManagement extends JFrame {
         searchPanel.add(txtSearch);
         panel.add(searchPanel, BorderLayout.NORTH);
 
-        // Table
-        String[] cols = {"Mã lớp", "Tên lớp", "GVCN", "Sĩ số", "Niên khóa", "Ghi chú"};
+        // Table (Bỏ cột GVCN, Niên khóa, Sĩ số tối đa)
+        String[] cols = {"Mã lớp", "Tên lớp", "Sĩ số hiện tại"};
         tableModel = new DefaultTableModel(cols, 0) {
             public boolean isCellEditable(int row, int col) { return false; }
         };
         table = new JTable(tableModel);
-        table.setRowHeight(30);
+        table.setRowHeight(35); // Tăng chiều cao dòng cho thoáng
         rowSorter = new TableRowSorter<>(tableModel);
         table.setRowSorter(rowSorter);
 
@@ -185,11 +170,16 @@ public class ClassManagement extends JFrame {
         headerRenderer.setHorizontalAlignment(JLabel.CENTER);
         for (int i=0; i<table.getColumnCount(); i++) table.getColumnModel().getColumn(i).setHeaderRenderer(headerRenderer);
 
+        // Center Align Cells
+        DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
+        centerRenderer.setHorizontalAlignment(JLabel.CENTER);
+        for(int i=0; i<table.getColumnCount(); i++) table.getColumnModel().getColumn(i).setCellRenderer(centerRenderer);
+
         // Click event
         table.addMouseListener(new MouseAdapter() {
             public void mouseClicked(MouseEvent e) {
                 int row = table.getSelectedRow();
-                if(row >= 0) loadData(table.convertRowIndexToModel(row));
+                if(row >= 0) loadDataToForm(table.convertRowIndexToModel(row));
             }
         });
 
@@ -227,60 +217,90 @@ public class ClassManagement extends JFrame {
     }
 
     // ================= LOGIC =================
+
+    private void loadDataFromDatabase() {
+        tableModel.setRowCount(0);
+        ArrayList<Classes> list = ClassDatabase.getClassDB().getAllClasses();
+
+        for (Classes c : list) {
+            tableModel.addRow(new Object[]{
+                    c.getClassID(),
+                    c.getClassName(),
+                    c.getStudentNumber()
+            });
+        }
+    }
+
     private void addClass() {
-        if(txtClassId.getText().isEmpty()) { JOptionPane.showMessageDialog(this, "Nhập mã lớp!"); return; }
-        tableModel.addRow(new Object[]{
-                txtClassId.getText(), txtClassName.getText(), txtTeacher.getText(),
-                spinnerCapacity.getValue(), txtAcademicYear.getText(), txtNote.getText()
-        });
-        JOptionPane.showMessageDialog(this, "Thêm thành công!");
-        clearForm();
+        try {
+            String id = txtClassId.getText().trim();
+            String name = txtClassName.getText().trim();
+
+            AddClass service = new AddClass();
+            service.add(id, name);
+
+            loadDataFromDatabase();
+            clearForm();
+            JOptionPane.showMessageDialog(this, "Thêm lớp thành công!");
+
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Lỗi: " + e.getMessage());
+        }
     }
 
     private void updateClass() {
         int row = table.getSelectedRow();
-        if(row < 0) return;
-        int modelRow = table.convertRowIndexToModel(row);
-        tableModel.setValueAt(txtClassId.getText(), modelRow, 0);
-        tableModel.setValueAt(txtClassName.getText(), modelRow, 1);
-        tableModel.setValueAt(txtTeacher.getText(), modelRow, 2);
-        tableModel.setValueAt(spinnerCapacity.getValue(), modelRow, 3);
-        tableModel.setValueAt(txtAcademicYear.getText(), modelRow, 4);
-        tableModel.setValueAt(txtNote.getText(), modelRow, 5);
-        JOptionPane.showMessageDialog(this, "Cập nhật thành công!");
+        if(row < 0) { JOptionPane.showMessageDialog(this, "Chọn lớp để sửa!"); return; }
+
+        try {
+            int modelRow = table.convertRowIndexToModel(row);
+            String oldID = tableModel.getValueAt(modelRow, 0).toString();
+
+            String newId = txtClassId.getText().trim();
+            String newName = txtClassName.getText().trim();
+
+            EditClass service = new EditClass();
+            service.edit(oldID, newId, newName);
+
+            loadDataFromDatabase();
+            clearForm();
+            JOptionPane.showMessageDialog(this, "Cập nhật thành công!");
+
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Lỗi: " + e.getMessage());
+        }
     }
 
     private void deleteClass() {
         int row = table.getSelectedRow();
-        if(row >= 0 && JOptionPane.showConfirmDialog(this, "Xóa lớp này?", "Confirm", JOptionPane.YES_NO_OPTION) == 0) {
-            tableModel.removeRow(table.convertRowIndexToModel(row));
-            clearForm();
+        if(row < 0) { JOptionPane.showMessageDialog(this, "Chọn lớp để xóa!"); return; }
+
+        if (JOptionPane.showConfirmDialog(this, "Bạn chắc chắn muốn xóa lớp này?", "Xác nhận", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
+            try {
+                int modelRow = table.convertRowIndexToModel(row);
+                String id = tableModel.getValueAt(modelRow, 0).toString();
+
+                DeleteClass service = new DeleteClass();
+                service.delete(id);
+
+                loadDataFromDatabase();
+                clearForm();
+                JOptionPane.showMessageDialog(this, "Xóa thành công!");
+
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(this, "Lỗi: " + e.getMessage());
+            }
         }
     }
 
-    private void loadData(int row) {
+    private void loadDataToForm(int row) {
         txtClassId.setText(tableModel.getValueAt(row, 0).toString());
         txtClassName.setText(tableModel.getValueAt(row, 1).toString());
-        txtTeacher.setText(tableModel.getValueAt(row, 2).toString());
-        spinnerCapacity.setValue(Integer.parseInt(tableModel.getValueAt(row, 3).toString()));
-        txtAcademicYear.setText(tableModel.getValueAt(row, 4).toString());
-        txtNote.setText(tableModel.getValueAt(row, 5).toString());
     }
 
     private void clearForm() {
-        txtClassId.setText(""); txtClassName.setText(""); txtTeacher.setText(""); txtNote.setText("");
+        txtClassId.setText(""); txtClassName.setText(""); txtNote.setText("");
         table.clearSelection();
-    }
-
-    private void backToDashboard() {
-        this.dispose();
-        SwingUtilities.invokeLater(() -> new Dashboard().setVisible(true));
-    }
-
-    private void addSampleData() {
-        tableModel.addRow(new Object[]{"6A1", "Lớp 6A1", "Nguyễn Văn A", 45, "2023-2024", "Lớp chọn"});
-        tableModel.addRow(new Object[]{"7A2", "Lớp 7A2", "Trần Thị B", 42, "2023-2024", ""});
-        tableModel.addRow(new Object[]{"8A1", "Lớp 8A1", "Lê Văn C", 40, "2023-2024", "Chuyên Toán"});
     }
 
     public static void main(String[] args) {

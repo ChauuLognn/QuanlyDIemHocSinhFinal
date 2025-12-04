@@ -1,6 +1,7 @@
 package GradeManager.service;
 
 import Exception.NotFoundException;
+import Exception.InvalidScoreException;
 import GradeManager.Grade;
 import GradeManager.data.GradeDatabase;
 
@@ -73,7 +74,11 @@ public class EditGrade {
 
         } catch (NotFoundException e){
             System.out.println("Lỗi: " + e.getMessage());
+        } catch (InvalidScoreException e) { // <--- SỬA THÊM: Bắt lỗi điểm sai (ví dụ <0 hoặc >10)
+            System.out.println("Lỗi nhập điểm: " + e.getMessage());
+        } catch (java.util.InputMismatchException e) { // <--- SỬA THÊM: Bắt lỗi nhập chữ thay vì số
+            System.out.println("Lỗi: Vui lòng nhập con số hợp lệ!");
+            sc.nextLine(); // Xóa bộ nhớ đệm
         }
-
     }
 }

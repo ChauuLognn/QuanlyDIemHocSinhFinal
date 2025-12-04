@@ -110,4 +110,9 @@ public class AccountDatabase {
         //Lưu lại với username mới
         accounts.put(newUsername, a);
     }
+    // Thêm vào cuối file AccountDatabase.java
+    public java.util.HashMap<String, Account> getAccountsMap() {
+        return accounts;
+    }
 }
+

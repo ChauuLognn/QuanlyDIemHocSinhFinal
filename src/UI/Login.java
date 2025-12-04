@@ -1,5 +1,8 @@
 package UI;
 
+import AccountManager.Account;
+import AccountManager.data.AccountDatabase;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
@@ -10,8 +13,9 @@ public class Login extends JFrame {
     private JPasswordField txtPassword;
     private JCheckBox chkRemember;
     private JButton btnLogin;
-    private JLabel lblForgotPassword;
-    private boolean passwordVisible = false;
+
+    // Thêm biến để kết nối backend
+    private AccountDatabase accountDB = AccountDatabase.getAccountDB();
 
     public Login() {
         setTitle("Student Management System");
@@ -20,17 +24,21 @@ public class Login extends JFrame {
         setLocationRelativeTo(null);
         setResizable(false);
 
-        // 1. MAIN PANEL: Gradient Xám Porsche (Theo yêu cầu của bạn)
+        // ... (Code giao diện như cũ)
+
+        JPanel mainPanel = createMainPanel();
+        add(mainPanel);
+    }
+
+    private JPanel createMainPanel() {
         JPanel mainPanel = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
                 Graphics2D g2d = (Graphics2D) g;
                 g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-
-                // Màu xám sang trọng (Porsche Grey Theme)
-                Color color1 = new Color(70, 70, 70);   // Xám đậm hơn chút ở trên
-                Color color2 = new Color(130, 130, 130); // Xám sáng ở dưới
+                Color color1 = new Color(70, 70, 70);
+                Color color2 = new Color(130, 130, 130);
                 GradientPaint gp = new GradientPaint(0, 0, color1, 0, getHeight(), color2);
                 g2d.setPaint(gp);
                 g2d.fillRect(0, 0, getWidth(), getHeight());
@@ -38,57 +46,53 @@ public class Login extends JFrame {
         };
         mainPanel.setLayout(null);
 
-        // Nút đóng (X)
+        // Nút đóng
         JButton btnClose = createIconButton("×", 350, 10, 30, 30);
-        btnClose.setFont(new Font("Arial", Font.BOLD, 24));
         btnClose.addActionListener(e -> System.exit(0));
         mainPanel.add(btnClose);
 
-        // Tiêu đề LOGIN
+        // Tiêu đề
         JLabel lblTitle = new JLabel("LOGIN");
         lblTitle.setFont(new Font("Arial", Font.BOLD, 32));
         lblTitle.setForeground(Color.WHITE);
         lblTitle.setBounds(30, 70, 200, 40);
         mainPanel.add(lblTitle);
 
-        // Label Username
+        // Username
         JLabel lblUsername = new JLabel("Username");
         lblUsername.setFont(new Font("Arial", Font.PLAIN, 14));
         lblUsername.setForeground(Color.WHITE);
         lblUsername.setBounds(30, 160, 100, 20);
         mainPanel.add(lblUsername);
 
-        // --- KHUNG NHẬP USERNAME ---
-        JPanel usernamePanel = createInputPanel(); // Dùng hàm đã fix lỗi
+        JPanel usernamePanel = createInputPanel();
         usernamePanel.setBounds(30, 185, 340, 45);
 
         JLabel userIcon = new JLabel("👤");
-        userIcon.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 20)); // Dùng font hỗ trợ icon tốt hơn
+        userIcon.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 20));
         userIcon.setForeground(Color.WHITE);
         userIcon.setBounds(10, 10, 30, 25);
         usernamePanel.add(userIcon);
 
-        txtUsername = new JTextField("  ");
+        txtUsername = new JTextField();
         txtUsername.setFont(new Font("Arial", Font.PLAIN, 14));
         txtUsername.setForeground(Color.WHITE);
-        txtUsername.setBackground(new Color(0,0,0,0)); // Nền rỗng
-        txtUsername.setOpaque(false);          // FIX LỖI NHOÈ: Bắt buộc có
-        txtUsername.setCaretColor(Color.WHITE); // Con trỏ màu trắng
+        txtUsername.setBackground(new Color(0,0,0,0));
+        txtUsername.setOpaque(false);
+        txtUsername.setCaretColor(Color.WHITE);
         txtUsername.setBorder(BorderFactory.createEmptyBorder());
         txtUsername.setBounds(45, 10, 280, 25);
         usernamePanel.add(txtUsername);
-
         mainPanel.add(usernamePanel);
 
-        // Label Password
+        // Password
         JLabel lblPassword = new JLabel("Password");
         lblPassword.setFont(new Font("Arial", Font.PLAIN, 14));
         lblPassword.setForeground(Color.WHITE);
         lblPassword.setBounds(30, 250, 100, 20);
         mainPanel.add(lblPassword);
 
-        // --- KHUNG NHẬP PASSWORD ---
-        JPanel passwordPanel = createInputPanel(); // Dùng hàm đã fix lỗi
+        JPanel passwordPanel = createInputPanel();
         passwordPanel.setBounds(30, 275, 340, 45);
 
         JLabel lockIcon = new JLabel("🔒");
@@ -97,69 +101,32 @@ public class Login extends JFrame {
         lockIcon.setBounds(10, 10, 30, 25);
         passwordPanel.add(lockIcon);
 
-        txtPassword = new JPasswordField("");
+        txtPassword = new JPasswordField();
         txtPassword.setFont(new Font("Arial", Font.PLAIN, 14));
         txtPassword.setForeground(Color.WHITE);
-        txtPassword.setBackground(new Color(0,0,0,0)); // Nền rỗng
-        txtPassword.setOpaque(false);          // FIX LỖI NHOÈ: Bắt buộc có
+        txtPassword.setBackground(new Color(0,0,0,0));
+        txtPassword.setOpaque(false);
         txtPassword.setCaretColor(Color.WHITE);
         txtPassword.setBorder(BorderFactory.createEmptyBorder());
         txtPassword.setEchoChar('●');
-        txtPassword.setBounds(45, 10, 245, 25);
+        txtPassword.setBounds(45, 10, 280, 25);
         passwordPanel.add(txtPassword);
-
-        // Icon Mắt (Show/Hide)
-        JLabel eyeIcon = new JLabel("👁");
-        eyeIcon.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 18));
-        eyeIcon.setForeground(Color.WHITE);
-        eyeIcon.setBounds(300, 10, 30, 25);
-        eyeIcon.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        eyeIcon.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                passwordVisible = !passwordVisible;
-                if (passwordVisible) {
-                    txtPassword.setEchoChar((char) 0);
-                } else {
-                    txtPassword.setEchoChar('●');
-                }
-            }
-        });
-        passwordPanel.add(eyeIcon);
-
         mainPanel.add(passwordPanel);
 
-        // Checkbox Remember Me
+        // Remember checkbox
         chkRemember = new JCheckBox("Save Login");
         chkRemember.setFont(new Font("Arial", Font.PLAIN, 12));
         chkRemember.setForeground(Color.WHITE);
         chkRemember.setBackground(new Color(0, 0, 0, 0));
-        chkRemember.setOpaque(false); // Fix lỗi nền
+        chkRemember.setOpaque(false);
         chkRemember.setBounds(30, 335, 120, 25);
         chkRemember.setFocusPainted(false);
         mainPanel.add(chkRemember);
 
-        // Forgot Password
-        lblForgotPassword = new JLabel("Forgot Password?");
-        lblForgotPassword.setFont(new Font("Arial", Font.PLAIN, 12));
-        lblForgotPassword.setForeground(Color.WHITE);
-        lblForgotPassword.setBounds(245, 335, 120, 25);
-        lblForgotPassword.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        lblForgotPassword.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                JOptionPane.showMessageDialog(Login.this,
-                        "Please contact Admin to reset password.",
-                        "Forgot Password", JOptionPane.INFORMATION_MESSAGE);
-            }
-        });
-        mainPanel.add(lblForgotPassword);
-
-        // --- BUTTON LOGIN (Custom Paint) ---
+        // Button Login
         btnLogin = new JButton("LOGIN") {
             @Override
             protected void paintComponent(Graphics g) {
-                // Vẽ nền nút bán trong suốt
                 g.setColor(getBackground());
                 g.fillRect(0, 0, getWidth(), getHeight());
                 super.paintComponent(g);
@@ -167,7 +134,7 @@ public class Login extends JFrame {
         };
         btnLogin.setFont(new Font("Arial", Font.BOLD, 16));
         btnLogin.setForeground(Color.WHITE);
-        btnLogin.setBackground(new Color(255, 255, 255, 40)); // Màu trắng mờ
+        btnLogin.setBackground(new Color(255, 255, 255, 40));
         btnLogin.setBorder(BorderFactory.createLineBorder(Color.WHITE, 1));
         btnLogin.setBounds(105, 385, 180, 45);
         btnLogin.setFocusPainted(false);
@@ -175,67 +142,92 @@ public class Login extends JFrame {
         btnLogin.setOpaque(false);
         btnLogin.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
+        // *** QUAN TRỌNG: Kết nối sự kiện với backend ***
+        btnLogin.addActionListener(e -> handleLogin());
+
         mainPanel.add(btnLogin);
 
-        // --- THÊM PHẦN NÀY: Link chuyển sang trang Đăng ký ---
+        // Link đăng ký
         JLabel lblRegister = new JLabel("<html>Don't have an account? <u>Sign Up</u></html>");
         lblRegister.setFont(new Font("Arial", Font.PLAIN, 12));
         lblRegister.setForeground(Color.WHITE);
-        // Đặt vị trí ở dưới nút Login (y = 450)
         lblRegister.setBounds(0, 450, 400, 30);
-        lblRegister.setHorizontalAlignment(SwingConstants.CENTER); // Căn giữa
+        lblRegister.setHorizontalAlignment(SwingConstants.CENTER);
         lblRegister.setCursor(new Cursor(Cursor.HAND_CURSOR));
-
-        // Sự kiện click
         lblRegister.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                // Đóng Login và mở Register
                 Login.this.dispose();
                 new Register().setVisible(true);
             }
         });
         mainPanel.add(lblRegister);
-        // ----------------------------------------------------
 
-        add(mainPanel);
-
-        // Hover Effect
-        btnLogin.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                btnLogin.setBackground(new Color(255, 255, 255, 80)); // Sáng hơn khi hover
-                btnLogin.repaint();
-            }
-            @Override
-            public void mouseExited(MouseEvent e) {
-                btnLogin.setBackground(new Color(255, 255, 255, 40)); // Trở về cũ
-                btnLogin.repaint();
-            }
-        });
-        btnLogin.addActionListener(e -> handleLogin());
-        mainPanel.add(btnLogin);
-
-        add(mainPanel);
-
-        // Enter key shortcut
-        getRootPane().setDefaultButton(btnLogin);
+        return mainPanel;
     }
 
-    // --- HÀM FIX LỖI GIAO DIỆN QUAN TRỌNG NHẤT ---
+    // *** PHƯƠNG THỨC QUAN TRỌNG: KẾT NỐI VỚI BACKEND ***
+    private void handleLogin() {
+        String username = txtUsername.getText().trim();
+        String password = new String(txtPassword.getPassword());
+
+        // Kiểm tra rỗng
+        if (username.isEmpty() || password.isEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                    "Vui lòng nhập đầy đủ thông tin!",
+                    "Lỗi",
+                    JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        // Hash mật khẩu để so sánh (vì password trong DB đã được hash)
+        String hashedPassword = accountDB.hashSHA256(password);
+
+        // Kiểm tra đăng nhập với backend
+        Account account = accountDB.findAccountByUsername(username);
+
+        if (account == null) {
+            JOptionPane.showMessageDialog(this,
+                    "Tên đăng nhập không tồn tại!",
+                    "Lỗi đăng nhập",
+                    JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        // So sánh mật khẩu đã hash
+        if (!account.getPassword().equals(hashedPassword)) {
+            JOptionPane.showMessageDialog(this,
+                    "Mật khẩu không đúng!",
+                    "Lỗi đăng nhập",
+                    JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        // Đăng nhập thành công
+        JOptionPane.showMessageDialog(this,
+                "Đăng nhập thành công!\nChào mừng, " + username,
+                "Thành công",
+                JOptionPane.INFORMATION_MESSAGE);
+
+        // Chuyển sang Dashboard
+        this.dispose();
+        SwingUtilities.invokeLater(() -> {
+            new Dashboard().setVisible(true);
+        });
+    }
+
     private JPanel createInputPanel() {
         JPanel panel = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
-                // Tự vẽ hình chữ nhật nền mờ
                 g.setColor(getBackground());
                 g.fillRect(0, 0, getWidth(), getHeight());
                 super.paintComponent(g);
             }
         };
-        panel.setOpaque(false); // Báo trong suốt để vẽ đè lên Gradient chính
+        panel.setOpaque(false);
         panel.setLayout(null);
-        panel.setBackground(new Color(255, 255, 255, 30)); // Độ mờ 30
+        panel.setBackground(new Color(255, 255, 255, 30));
         panel.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(new Color(255, 255, 255, 100), 1),
                 BorderFactory.createEmptyBorder(5, 5, 5, 5)
@@ -255,25 +247,18 @@ public class Login extends JFrame {
         return btn;
     }
 
-    private void handleLogin() {
-        String username = txtUsername.getText().trim();
-        String password = new String(txtPassword.getPassword());
-
-        if (username.equals("admin") && password.equals("1011")) {
-            JOptionPane.showMessageDialog(this, "Login Successful!");
-
-            // Chuyển trang
-            this.dispose();
-            SwingUtilities.invokeLater(() -> {
-                // Mở màn hình chính mà bạn đã có code trong link chat
-                new Dashboard().setVisible(true);
-            });
-        } else {
-            JOptionPane.showMessageDialog(this, "Invalid Username or Password!", "Error", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
     public static void main(String[] args) {
+        // Thêm dữ liệu mẫu vào hệ thống
+        AccountDatabase accountDB = AccountDatabase.getAccountDB();
+
+        // Tạo tài khoản admin (password: admin123)
+        String hashedAdminPass = accountDB.hashSHA256("admin123");
+        accountDB.addAccount("admin", hashedAdminPass, "ADMIN001");
+
+        // Tạo tài khoản giáo viên
+        String hashedTeacherPass = accountDB.hashSHA256("teacher123");
+        accountDB.addAccount("giaovien", hashedTeacherPass, "GV001");
+
         SwingUtilities.invokeLater(() -> {
             new Login().setVisible(true);
         });

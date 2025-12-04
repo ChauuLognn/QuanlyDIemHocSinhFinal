@@ -1,6 +1,9 @@
 package AccountManager;
 
-public class Account {
+import java.io.Serializable;
+
+public class Account implements Serializable {
+    private static final long serialVersionUID = 1L; // Nên có dòng này để định danh phiên bản
     private String username;
     private String password;
     private String ID;

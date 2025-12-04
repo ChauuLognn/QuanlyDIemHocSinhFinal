@@ -10,6 +10,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import ReportManager.service.ReportService;
 
 public class ReportManagement extends JFrame {
     // Colors
@@ -191,59 +192,25 @@ public class ReportManagement extends JFrame {
 
     // ================= BUSINESS LOGIC =================
 
-    // 1. Tạo nội dung báo cáo giả lập
+
+    // 1. Tạo nội dung báo cáo
     private void generateReportPreview() {
         String type = (String) cboReportType.getSelectedItem();
         String className = (String) cboClass.getSelectedItem();
         String semester = (String) cboSemester.getSelectedItem();
-        String date = new SimpleDateFormat("dd/MM/yyyy").format(new Date());
 
-        StringBuilder sb = new StringBuilder();
+        ReportService service = new ReportService();
+        // UI chỉ việc hiển thị, không cần biết chuỗi được cộng trừ thế nào
+        String content = service.generateReportContent(type, className, semester);
 
-        // Header Báo cáo
-        sb.append("TRƯỜNG THCS ABC\n");
-        sb.append("ĐỊA CHỈ: HÀ NỘI, VIỆT NAM\n");
-        sb.append("------------------------------------------------------------\n\n");
-        sb.append("                  ").append(type.toUpperCase()).append("\n");
-        sb.append("                  Năm học: 2023-2024\n\n");
-        sb.append("Lớp:      ").append(className).append("\n");
-        sb.append("Học kỳ:   ").append(semester).append("\n");
-        sb.append("Ngày xuất: ").append(date).append("\n");
-        sb.append("Người lập: ADMIN\n");
-        sb.append("\n============================================================\n");
-
-        // Body Báo cáo (Dữ liệu giả lập tùy loại)
-        if (type.contains("Danh sách lớp")) {
-            sb.append(String.format("%-5s | %-20s | %-10s | %-10s\n", "STT", "HỌ VÀ TÊN", "GIỚI TÍNH", "GHI CHÚ"));
-            sb.append("------------------------------------------------------------\n");
-            sb.append(String.format("%-5s | %-20s | %-10s | %-10s\n", "01", "Nguyễn Văn An", "Nam", ""));
-            sb.append(String.format("%-5s | %-20s | %-10s | %-10s\n", "02", "Trần Thị Bình", "Nữ", "Lớp trưởng"));
-            sb.append(String.format("%-5s | %-20s | %-10s | %-10s\n", "03", "Lê Văn Cường", "Nam", ""));
-            // ... thêm tiếp ...
-        }
-        else if (type.contains("Bảng điểm")) {
-            sb.append(String.format("%-5s | %-15s | %-5s | %-5s | %-5s | %-5s\n", "STT", "HỌ TÊN", "TOÁN", "VĂN", "ANH", "ĐTB"));
-            sb.append("------------------------------------------------------------\n");
-            sb.append(String.format("%-5s | %-15s | %-5s | %-5s | %-5s | %-5s\n", "01", "Nguyễn Văn An", "8.5", "7.0", "8.0", "7.8"));
-            sb.append(String.format("%-5s | %-15s | %-5s | %-5s | %-5s | %-5s\n", "02", "Trần Thị Bình", "9.0", "8.5", "9.0", "8.8"));
-        }
-        else {
-            sb.append("\n[Dữ liệu mẫu cho báo cáo này đang được cập nhật...]\n");
-        }
-
-        sb.append("============================================================\n");
-        sb.append("\n\n\n");
-        sb.append("          Người lập biểu                  Ban Giám Hiệu\n");
-        sb.append("            (Ký tên)                        (Ký tên)\n");
-
-        txtPreview.setText(sb.toString());
-        txtPreview.setCaretPosition(0); // Scroll lên đầu
+        txtPreview.setText(content);
+        txtPreview.setCaretPosition(0);
     }
 
     // 2. Xuất file ra máy tính
     private void exportToFile() {
         if (txtPreview.getText().isEmpty() || txtPreview.getText().startsWith("Vui lòng")) {
-            JOptionPane.showMessageDialog(this, "Hãy bấm 'Xem trước' để tạo dữ liệu trước khi xuất!", "Thông báo", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Hãy bấm 'Xem trước' để tạo dữ liệu!", "Cảnh báo", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
@@ -251,15 +218,14 @@ public class ReportManagement extends JFrame {
         fileChooser.setDialogTitle("Lưu file báo cáo");
         fileChooser.setSelectedFile(new File("BaoCao_" + System.currentTimeMillis() + ".txt"));
 
-        int userSelection = fileChooser.showSaveDialog(this);
+        if (fileChooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+            try {
+                ReportService service = new ReportService();
+                service.saveReportToFile(fileChooser.getSelectedFile(), txtPreview.getText());
 
-        if (userSelection == JFileChooser.APPROVE_OPTION) {
-            File fileToSave = fileChooser.getSelectedFile();
-            try (BufferedWriter writer = new BufferedWriter(new FileWriter(fileToSave))) {
-                writer.write(txtPreview.getText()); // Ghi nội dung từ TextArea ra file
-                JOptionPane.showMessageDialog(this, "Xuất file thành công!\nĐường dẫn: " + fileToSave.getAbsolutePath());
+                JOptionPane.showMessageDialog(this, "Xuất file thành công!");
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "Lỗi khi lưu file: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Lỗi: " + ex.getMessage());
             }
         }
     }

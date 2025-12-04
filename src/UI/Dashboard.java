@@ -13,6 +13,7 @@ import java.awt.event.MouseEvent;
 import java.util.*;
 import java.util.List;
 import java.util.stream.Collectors;
+import GradeManager.service.DashboardService;
 
 public class Dashboard extends JFrame {
     private JPanel mainPanel;
@@ -37,10 +38,10 @@ public class Dashboard extends JFrame {
         // 1. Top Navigation Bar
         add(createTopNavBar(), BorderLayout.NORTH);
 
-        // 2. Left Sidebar Menu
+        // 2. Left Sidebar Menu (Đã thêm Cài đặt)
         add(createSidebarMenu(), BorderLayout.WEST);
 
-        // 3. Main Content Area
+        // 3. Main Content Area (Dữ liệu thật)
         mainPanel = createMainContent();
         add(mainPanel, BorderLayout.CENTER);
     }
@@ -190,9 +191,12 @@ public class Dashboard extends JFrame {
         bottomPanel.setBackground(secondaryColor);
         bottomPanel.setPreferredSize(new Dimension(0, 200));
 
+        DashboardService service = new DashboardService();
+
         // Tính toán dữ liệu thật cho 2 bảng này
-        bottomPanel.add(createInfoCard("Phân loại học lực", getAcademicPerformanceStats()));
-        bottomPanel.add(createInfoCard("Lớp học nổi bật (Top ĐTB)", getTopClassesStats()));
+        bottomPanel.add(createInfoCard("Phân loại học lực", service.calculatePerformanceStats()));
+        bottomPanel.add(createInfoCard("Lớp học nổi bật (Top ĐTB)", service.calculateTopClasses()));
+
 
         // Container giữa chứa Stats và Bottom
         JPanel centerContainer = new JPanel(new BorderLayout(0, 20));
@@ -203,86 +207,6 @@ public class Dashboard extends JFrame {
         content.add(centerContainer, BorderLayout.CENTER);
 
         return content;
-    }
-
-    // ============================================================
-    // LOGIC TÍNH TOÁN DỮ LIỆU THẬT (BACKEND LOGIC IN UI)
-    // ============================================================
-
-    // 1. Tính phân loại học lực
-    private String[] getAcademicPerformanceStats() {
-        ArrayList<Student> list = studentDB.getAllStudents();
-        if (list.isEmpty()) return new String[]{"Chưa có dữ liệu học sinh"};
-
-        int gio = 0, kha = 0, tb = 0, yeu = 0;
-        int countWithScore = 0;
-
-        for (Student s : list) {
-            Grade g = gradeDB.getGradeByStudentID(s.getStudentID());
-            if (g != null) {
-                double avg = g.getAverage();
-                if (avg >= 8.0) gio++;
-                else if (avg >= 6.5) kha++;
-                else if (avg >= 5.0) tb++;
-                else yeu++;
-                countWithScore++;
-            }
-        }
-
-        if (countWithScore == 0) return new String[]{"Chưa có dữ liệu điểm số"};
-
-        // Tính phần trăm
-        return new String[]{
-                String.format("Giỏi: %d (%d%%)", gio, (int)((gio * 100.0) / countWithScore)),
-                String.format("Khá: %d (%d%%)", kha, (int)((kha * 100.0) / countWithScore)),
-                String.format("Trung bình: %d (%d%%)", tb, (int)((tb * 100.0) / countWithScore)),
-                String.format("Yếu: %d (%d%%)", yeu, (int)((yeu * 100.0) / countWithScore))
-        };
-    }
-
-    // 2. Tính lớp học nổi bật (Điểm trung bình lớp cao nhất)
-    private String[] getTopClassesStats() {
-        ArrayList<Student> students = studentDB.getAllStudents();
-        if (students.isEmpty()) return new String[]{"Chưa có dữ liệu"};
-
-        // Map: Tên lớp -> Danh sách điểm TB của các HS trong lớp đó
-        Map<String, List<Double>> classScores = new HashMap<>();
-
-        for (Student s : students) {
-            String className = s.getStudentClass();
-            if (className == null || className.isEmpty()) continue;
-
-            Grade g = gradeDB.getGradeByStudentID(s.getStudentID());
-            if (g != null) {
-                classScores.putIfAbsent(className, new ArrayList<>());
-                classScores.get(className).add(g.getAverage());
-            }
-        }
-
-        if (classScores.isEmpty()) return new String[]{"Chưa có dữ liệu điểm theo lớp"};
-
-        // Tính ĐTB cho từng lớp
-        Map<String, Double> classAvgMap = new HashMap<>();
-        for (Map.Entry<String, List<Double>> entry : classScores.entrySet()) {
-            double sum = 0;
-            for (double score : entry.getValue()) sum += score;
-            double avg = sum / entry.getValue().size();
-            classAvgMap.put(entry.getKey(), avg);
-        }
-
-        // Sắp xếp giảm dần theo điểm
-        List<Map.Entry<String, Double>> sortedClasses = new ArrayList<>(classAvgMap.entrySet());
-        sortedClasses.sort((e1, e2) -> e2.getValue().compareTo(e1.getValue()));
-
-        // Lấy Top 4
-        List<String> result = new ArrayList<>();
-        for (int i = 0; i < Math.min(4, sortedClasses.size()); i++) {
-            Map.Entry<String, Double> entry = sortedClasses.get(i);
-            int studentCount = classScores.get(entry.getKey()).size();
-            result.add(String.format("%s: %d HS có điểm - ĐTB: %.2f", entry.getKey(), studentCount, entry.getValue()));
-        }
-
-        return result.toArray(new String[0]);
     }
 
     // ============================================================

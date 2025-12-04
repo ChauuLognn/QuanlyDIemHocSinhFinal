@@ -1,6 +1,7 @@
 package UI;
 
-import AccountManager.data.AccountDatabase; // <--- Import Database
+import AccountManager.data.AccountDatabase;
+import AccountManager.service.AuthService;
 
 import javax.swing.*;
 import java.awt.*;
@@ -208,19 +209,16 @@ public class Login extends JFrame {
         String username = txtUsername.getText().trim();
         String password = new String(txtPassword.getPassword());
 
-        // 1. Gọi Database kiểm tra
-        AccountDatabase db = AccountDatabase.getAccountDB();
-        boolean isValid = db.checkLogin(username, password);
+        // Thay vì gọi Database, hãy gọi Service
+        AuthService authService = new AuthService();
 
-        if (isValid) {
+        if (authService.login(username, password)) {
             JOptionPane.showMessageDialog(this, "Đăng nhập thành công!");
             this.dispose();
             SwingUtilities.invokeLater(() -> new Dashboard().setVisible(true));
         } else {
             JOptionPane.showMessageDialog(this,
-                    "Sai tên đăng nhập hoặc mật khẩu!\n(Hãy chắc chắn bạn đã Đăng ký trước)",
-                    "Lỗi đăng nhập",
-                    JOptionPane.ERROR_MESSAGE);
+                    "Sai tên đăng nhập hoặc mật khẩu!", "Lỗi", JOptionPane.ERROR_MESSAGE);
         }
     }
 

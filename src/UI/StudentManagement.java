@@ -7,6 +7,7 @@ import StudentManager.data.StudentDatabase;
 import StudentManager.service.AddStudent;
 import StudentManager.service.DeleteStudent;
 import StudentManager.service.EditStudent;
+import StudentManager.service.StudentService;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -27,6 +28,7 @@ public class StudentManagement extends JFrame {
     private JTable table;
     private JTextField txtSearch;
     private TableRowSorter<DefaultTableModel> rowSorter;
+    private StudentService studentService = new StudentService();
 
     // Input fields
     private JTextField txtId, txtName, txtClass;
@@ -342,59 +344,48 @@ public class StudentManagement extends JFrame {
 
     // --- HÀM MỚI: Tự động cập nhật bộ lọc lớp dựa trên danh sách học sinh ---
     private void updateClassFilter() {
-        // 1. Lưu lại lựa chọn hiện tại để không bị reset bất ngờ
         String currentSelection = (cboFilter.getSelectedItem() != null) ? cboFilter.getSelectedItem().toString() : "Tất cả";
-
-        // 2. Xóa hết item cũ
         cboFilter.removeAllItems();
         cboFilter.addItem("Tất cả");
 
-        // 3. Quét toàn bộ học sinh để lấy ra các tên lớp (Không trùng lặp)
-        Set<String> uniqueClasses = new HashSet<>();
-        for (Student s : StudentDatabase.getStudentDB().getAllStudents()) {
-            if (s.getStudentClass() != null && !s.getStudentClass().trim().isEmpty()) {
-                uniqueClasses.add(s.getStudentClass().trim());
-            }
-        }
+        // GỌI SERVICE LẤY DANH SÁCH LỚP
+        List<String> classes = studentService.getUniqueClassList();
 
-        // 4. Sắp xếp danh sách lớp cho đẹp (6A1, 7A2...)
-        List<String> sortedList = new ArrayList<>(uniqueClasses);
-        Collections.sort(sortedList);
-
-        // 5. Thêm vào ComboBox
-        for (String className : sortedList) {
+        for (String className : classes) {
             cboFilter.addItem(className);
         }
 
-        // 6. Khôi phục lại lựa chọn cũ nếu lớp đó vẫn còn tồn tại
-        if (currentSelection.equals("Tất cả") || uniqueClasses.contains(currentSelection)) {
+        if (currentSelection.equals("Tất cả") || classes.contains(currentSelection)) {
             cboFilter.setSelectedItem(currentSelection);
         }
     }
 
     private void loadDataFromDatabase() {
         tableModel.setRowCount(0);
-        ArrayList<Student> list = StudentDatabase.getStudentDB().getAllStudents();
+        // Gọi Service lấy danh sách
+        ArrayList<Student> list = studentService.getAllStudents();
 
         for (Student s : list) {
             double reg = 0, mid = 0, fin = 0;
             try {
-                Grade g = GradeDatabase.getGradeDB().getGradeByStudentID(s.getStudentID());
+                // Gọi Service lấy điểm
+                Grade g = studentService.getStudentGrade(s.getStudentID());
                 if (g != null) {
                     reg = g.getRegularScore();
                     mid = g.getMidtermScore();
                     fin = g.getFinalScore();
                 }
             } catch (Exception ignored) {}
-            double avg = calculateAvg(reg, mid, fin);
+
+            // Gọi Service tính toán & xếp loại
+            double avg = studentService.calculateAvg(reg, mid, fin);
+            String rank = studentService.classify(avg);
 
             tableModel.addRow(new Object[]{
                     s.getStudentID(), s.getStudentName(), s.getStudentClass(), s.getGender(),
-                    reg, mid, fin, String.format("%.2f", avg), classify(avg)
+                    reg, mid, fin, String.format("%.2f", avg), rank
             });
         }
-
-        // GỌI HÀM CẬP NHẬT LỌC LỚP Ở ĐÂY
         updateClassFilter();
     }
 
@@ -506,17 +497,6 @@ public class StudentManagement extends JFrame {
         return s;
     }
 
-    private double calculateAvg(double r, double m, double f) {
-        return (r + m * 2 + f * 3) / 6.0;
-    }
-
-    private String classify(double avg) {
-        if (avg == 0) return "-";
-        if (avg >= 8.0) return "Giỏi";
-        if (avg >= 6.5) return "Khá";
-        if (avg >= 5.0) return "Trung bình";
-        return "Yếu";
-    }
 
     private boolean validateInput() {
         if (txtId.getText().isEmpty() || txtName.getText().isEmpty()) {

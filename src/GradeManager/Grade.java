@@ -1,6 +1,8 @@
 package GradeManager;
 
 public class Grade {
+    private static final long serialVersionUID = 1L;
+
     private String studentID;
     private double regularScore;
     private double midtermScore;
@@ -24,4 +26,10 @@ public class Grade {
 
     public void setFinalScore(double finalScore) {this.finalScore = finalScore;}
     public double getFinalScore() {return finalScore;}
+
+
+    // hàm tính điểm trung bình
+    public double getAverage() {
+        return (regularScore + midtermScore * 2 + finalScore * 3) / 6.0;
+    }
 }

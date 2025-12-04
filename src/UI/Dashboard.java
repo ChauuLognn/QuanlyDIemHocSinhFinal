@@ -1,39 +1,52 @@
 package UI;
 
+import GradeManager.Grade;
+import GradeManager.data.GradeDatabase;
+import StudentManager.Student;
+import StudentManager.data.StudentDatabase;
+import ClassManager.data.ClassDatabase;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.*;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class Dashboard extends JFrame {
     private JPanel mainPanel;
-    private String username = "ADMIN";
-    private Color primaryColor = new Color(70, 70, 70);
-    private Color secondaryColor = new Color(245, 245, 245);
-    private Color accentColor = new Color(100, 100, 100);
+    private String username = "ADMIN"; // Có thể lấy từ Login sau này
+
+    // Colors
+    private final Color primaryColor = new Color(70, 70, 70);
+    private final Color secondaryColor = new Color(245, 245, 245);
+
+    // Database References
+    private final StudentDatabase studentDB = StudentDatabase.getStudentDB();
+    private final GradeDatabase gradeDB = GradeDatabase.getGradeDB();
+    private final ClassDatabase classDB = ClassDatabase.getClassDB();
 
     public Dashboard() {
-        setTitle("Student Management System - Dashboard");
+        setTitle("Hệ thống quản lý học sinh");
         setSize(1200, 700);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
-
-        // Main layout
         setLayout(new BorderLayout());
 
-        // Top Navigation Bar
+        // 1. Top Navigation Bar
         add(createTopNavBar(), BorderLayout.NORTH);
 
-        // Left Sidebar Menu
+        // 2. Left Sidebar Menu (Đã thêm Cài đặt)
         add(createSidebarMenu(), BorderLayout.WEST);
 
-        // Main Content Area
+        // 3. Main Content Area (Dữ liệu thật)
         mainPanel = createMainContent();
         add(mainPanel, BorderLayout.CENTER);
     }
 
     // ============================================================
-    // TOP NAVIGATION BAR
+    // TOP BAR
     // ============================================================
     private JPanel createTopNavBar() {
         JPanel navbar = new JPanel(new BorderLayout());
@@ -41,17 +54,15 @@ public class Dashboard extends JFrame {
         navbar.setBackground(primaryColor);
         navbar.setBorder(BorderFactory.createEmptyBorder(15, 25, 15, 25));
 
-        // Left - Title
         JLabel title = new JLabel("QUẢN LÝ ĐIỂM HỌC SINH");
         title.setFont(new Font("Arial", Font.BOLD, 16));
         title.setForeground(Color.WHITE);
         navbar.add(title, BorderLayout.WEST);
 
-        // Right - User Info
         JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 0));
         rightPanel.setBackground(primaryColor);
 
-        JLabel userName = new JLabel(username);
+        JLabel userName = new JLabel("Xin chào, " + username);
         userName.setFont(new Font("Arial", Font.PLAIN, 13));
         userName.setForeground(Color.WHITE);
         rightPanel.add(userName);
@@ -71,12 +82,11 @@ public class Dashboard extends JFrame {
         rightPanel.add(btnLogout);
 
         navbar.add(rightPanel, BorderLayout.EAST);
-
         return navbar;
     }
 
     // ============================================================
-    // LEFT SIDEBAR MENU
+    // SIDEBAR MENU (Đã thêm Cài đặt)
     // ============================================================
     private JPanel createSidebarMenu() {
         JPanel sidebar = new JPanel();
@@ -87,18 +97,17 @@ public class Dashboard extends JFrame {
 
         sidebar.add(Box.createRigidArea(new Dimension(0, 20)));
 
-        // Menu items
         String[] menuItems = {
                 "Trang chủ",
                 "Quản lý học sinh",
-                "Thống kê",
-                "Môn học",
                 "Lớp học",
-                "Báo cáo"
+                "Thống kê",
+                "Báo cáo",
+                "Cài đặt" // <--- Mục mới
         };
 
         for (int i = 0; i < menuItems.length; i++) {
-            JButton menuBtn = createMenuButton(menuItems[i], i == 0);
+            JButton menuBtn = createMenuButton(menuItems[i], i == 0); // Active mục đầu tiên
             sidebar.add(menuBtn);
         }
 
@@ -124,203 +133,163 @@ public class Dashboard extends JFrame {
             ));
         }
 
-        // Hover effect
         btn.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                if (!isActive) {
-                    btn.setBackground(new Color(250, 250, 250));
-                }
-            }
-            @Override
-            public void mouseExited(MouseEvent e) {
-                if (!isActive) {
-                    btn.setBackground(Color.WHITE);
-                }
-            }
+            public void mouseEntered(MouseEvent e) { if (!isActive) btn.setBackground(new Color(250, 250, 250)); }
+            public void mouseExited(MouseEvent e) { if (!isActive) btn.setBackground(Color.WHITE); }
         });
 
-        // Click action
+        // Xử lý chuyển màn hình
         btn.addActionListener(e -> {
-            if (text.contains("Quản lý học sinh") || text.contains("users")) {
-                openStudentManagement();
-            }
-            else if (text.contains("Môn học") || text.contains("Subject")) {
-                this.dispose(); // Đóng Dashboard
-                SwingUtilities.invokeLater(() -> new SubjectManagement().setVisible(true));
-            }
-            else if (text.contains("Lớp") || text.contains("Class")) {
-                this.dispose(); // Đóng Dashboard
-                SwingUtilities.invokeLater(() -> new ClassManagement().setVisible(true));// Mở SubjectManagement
-            }
-            else if (text.contains("Thống kê") || text.contains("Statistics")) {
+            if (text.equals("Quản lý học sinh")) {
                 this.dispose();
-                SwingUtilities.invokeLater(() -> new Statistics().setVisible(true));
-            }
-            else if (text.contains("Báo cáo") || text.contains("Report")) {
+                new StudentManagement().setVisible(true);
+            } else if (text.equals("Lớp học")) {
+                this.dispose();
+                new ClassManagement().setVisible(true);
+            } else if (text.equals("Thống kê")) {
+                this.dispose();
+                new Statistics().setVisible(true);
+            } else if (text.equals("Báo cáo")) {
                 this.dispose();
                 new ReportManagement().setVisible(true);
+            } else if (text.equals("Cài đặt")) {
+                JOptionPane.showMessageDialog(this, "Chức năng Cài đặt đang phát triển!");
             }
-            else if (!isActive) {
-                JOptionPane.showMessageDialog(this, "Chức năng: " + text);
-            }
-
-
         });
 
         return btn;
-
-
     }
 
     // ============================================================
-    // MAIN CONTENT AREA
+    // MAIN CONTENT (DỮ LIỆU THẬT)
     // ============================================================
     private JPanel createMainContent() {
         JPanel content = new JPanel(new BorderLayout(20, 20));
         content.setBackground(secondaryColor);
         content.setBorder(BorderFactory.createEmptyBorder(30, 30, 30, 30));
 
-        // Top section
+        // 1. Welcome
         JPanel topSection = new JPanel(new BorderLayout());
         topSection.setBackground(secondaryColor);
-
-        JLabel welcome = new JLabel("Tổng quan");
+        JLabel welcome = new JLabel("Tổng quan hệ thống");
         welcome.setFont(new Font("Arial", Font.BOLD, 22));
         topSection.add(welcome, BorderLayout.WEST);
-
         content.add(topSection, BorderLayout.NORTH);
 
-        // Stats cards - chỉ 2 card chính
+        // 2. Stats Cards (Số liệu thật)
         JPanel statsPanel = new JPanel(new GridLayout(1, 2, 20, 0));
         statsPanel.setBackground(secondaryColor);
         statsPanel.setPreferredSize(new Dimension(0, 150));
 
-        statsPanel.add(createSimpleCard("Tổng học sinh", "250"));
-        statsPanel.add(createSimpleCard("Tổng số lớp", "8"));
+        // Lấy số liệu thực tế
+        int totalStudents = studentDB.getAllStudents().size();
+        int totalClasses = classDB.getAllClasses().size();
 
-        // Middle section - Quick actions
-        JPanel middleSection = new JPanel(new BorderLayout(20, 20));
-        middleSection.setBackground(secondaryColor);
+        statsPanel.add(createSimpleCard("Tổng học sinh", String.valueOf(totalStudents)));
+        statsPanel.add(createSimpleCard("Tổng số lớp", String.valueOf(totalClasses)));
 
-        JPanel quickActionsPanel = createQuickActionsPanel();
-        middleSection.add(quickActionsPanel, BorderLayout.CENTER);
+        // 3. Bottom Info: Phân loại & Lớp nổi bật
+        JPanel bottomPanel = new JPanel(new GridLayout(1, 2, 20, 0));
+        bottomPanel.setBackground(secondaryColor);
+        bottomPanel.setPreferredSize(new Dimension(0, 200));
 
+        // Tính toán dữ liệu thật cho 2 bảng này
+        bottomPanel.add(createInfoCard("Phân loại học lực", getAcademicPerformanceStats()));
+        bottomPanel.add(createInfoCard("Lớp học nổi bật (Top ĐTB)", getTopClassesStats()));
+
+        // Container giữa chứa Stats và Bottom
         JPanel centerContainer = new JPanel(new BorderLayout(0, 20));
         centerContainer.setBackground(secondaryColor);
         centerContainer.add(statsPanel, BorderLayout.NORTH);
-        centerContainer.add(middleSection, BorderLayout.CENTER);
+        centerContainer.add(bottomPanel, BorderLayout.CENTER);
 
         content.add(centerContainer, BorderLayout.CENTER);
-
-        // Bottom info
-        JPanel bottomPanel = new JPanel(new GridLayout(1, 2, 20, 0));
-        bottomPanel.setBackground(secondaryColor);
-        bottomPanel.setPreferredSize(new Dimension(0, 180));
-
-        bottomPanel.add(createInfoCard("Phân loại học lực", new String[]{
-                "Giỏi: 45 học sinh (18%)",
-                "Khá: 85 học sinh (34%)",
-                "Trung bình: 75 học sinh (30%)",
-                "Yếu: 45 học sinh (18%)"
-        }));
-
-        bottomPanel.add(createInfoCard("Lớp học nổi bật", new String[]{
-                "IT01: 32 học sinh - ĐTB 8.5",
-                "IT02: 30 học sinh - ĐTB 7.8",
-                "IT03: 28 học sinh - ĐTB 8.2",
-                "IT04: 31 học sinh - ĐTB 7.5"
-        }));
-
-        content.add(bottomPanel, BorderLayout.SOUTH);
 
         return content;
     }
 
     // ============================================================
-    // QUICK ACTIONS PANEL
+    // LOGIC TÍNH TOÁN DỮ LIỆU THẬT (BACKEND LOGIC IN UI)
     // ============================================================
-    // ============================================================
-    // QUICK ACTIONS PANEL (ĐÃ SỬA LẠI)
-    // ============================================================
-    private JPanel createQuickActionsPanel() {
-        JPanel panel = new JPanel(new BorderLayout(0, 15)); // Khoảng cách giữa tiêu đề và nút
-        panel.setBackground(Color.WHITE);
-        // Viền bo ngoài panel
-        panel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(230, 230, 230), 1),
-                BorderFactory.createEmptyBorder(20, 20, 20, 20)
-        ));
 
-        JLabel title = new JLabel("Thao tác nhanh");
-        title.setFont(new Font("Arial", Font.BOLD, 15));
-        title.setForeground(primaryColor);
-        panel.add(title, BorderLayout.NORTH);
+    // 1. Tính phân loại học lực
+    private String[] getAcademicPerformanceStats() {
+        ArrayList<Student> list = studentDB.getAllStudents();
+        if (list.isEmpty()) return new String[]{"Chưa có dữ liệu học sinh"};
 
-        // Grid 1 dòng 6 cột (hoặc 2 dòng 3 cột tùy ông thích, ở đây để 1 dòng cho thoáng)
-        JPanel buttonsPanel = new JPanel(new GridLayout(1, 6, 15, 0));
-        buttonsPanel.setBackground(Color.WHITE);
+        int gio = 0, kha = 0, tb = 0, yeu = 0;
+        int countWithScore = 0;
 
-        // Thêm nút kèm Icon (Emoji)
-        buttonsPanel.add(createActionButton("Thêm HS", "➕"));
-        buttonsPanel.add(createActionButton("Nhập điểm", "📝"));
-        buttonsPanel.add(createActionButton("Báo cáo", "🖨️"));
-        buttonsPanel.add(createActionButton("Thống kê", "📊"));
-        buttonsPanel.add(createActionButton("QL Lớp", "🏫"));
-        buttonsPanel.add(createActionButton("Tìm kiếm", "🔍"));
+        for (Student s : list) {
+            Grade g = gradeDB.getGradeByStudentID(s.getStudentID());
+            if (g != null) {
+                double avg = g.getAverage();
+                if (avg >= 8.0) gio++;
+                else if (avg >= 6.5) kha++;
+                else if (avg >= 5.0) tb++;
+                else yeu++;
+                countWithScore++;
+            }
+        }
 
-        panel.add(buttonsPanel, BorderLayout.CENTER);
+        if (countWithScore == 0) return new String[]{"Chưa có dữ liệu điểm số"};
 
-        return panel;
+        // Tính phần trăm
+        return new String[]{
+                String.format("Giỏi: %d (%d%%)", gio, (int)((gio * 100.0) / countWithScore)),
+                String.format("Khá: %d (%d%%)", kha, (int)((kha * 100.0) / countWithScore)),
+                String.format("Trung bình: %d (%d%%)", tb, (int)((tb * 100.0) / countWithScore)),
+                String.format("Yếu: %d (%d%%)", yeu, (int)((yeu * 100.0) / countWithScore))
+        };
     }
 
-    private JButton createActionButton(String text, String icon) {
-        // Dùng HTML để căn giữa và xuống dòng: Icon to ở trên, Text nhỏ ở dưới
-        String htmlLabel = "<html><center><span style='font-size:20px'>" + icon + "</span><br><span style='font-size:10px'>" + text + "</span></center></html>";
+    // 2. Tính lớp học nổi bật (Điểm trung bình lớp cao nhất)
+    private String[] getTopClassesStats() {
+        ArrayList<Student> students = studentDB.getAllStudents();
+        if (students.isEmpty()) return new String[]{"Chưa có dữ liệu"};
 
-        JButton btn = new JButton(htmlLabel);
-        btn.setForeground(primaryColor);
-        btn.setBackground(Color.WHITE);
+        // Map: Tên lớp -> Danh sách điểm TB của các HS trong lớp đó
+        Map<String, List<Double>> classScores = new HashMap<>();
 
-        // Viền nhạt cho từng nút
-        btn.setBorder(BorderFactory.createLineBorder(new Color(220, 220, 220), 1));
+        for (Student s : students) {
+            String className = s.getStudentClass();
+            if (className == null || className.isEmpty()) continue;
 
-        btn.setFocusPainted(false);
-        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-
-        // Hiệu ứng Hover: Rê chuột vào thì nền xám nhẹ, viền đậm hơn tí
-        btn.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                btn.setBackground(new Color(245, 248, 250)); // Màu nền khi hover
-                btn.setBorder(BorderFactory.createLineBorder(new Color(180, 180, 180), 1));
+            Grade g = gradeDB.getGradeByStudentID(s.getStudentID());
+            if (g != null) {
+                classScores.putIfAbsent(className, new ArrayList<>());
+                classScores.get(className).add(g.getAverage());
             }
-            @Override
-            public void mouseExited(MouseEvent e) {
-                btn.setBackground(Color.WHITE); // Trả về màu cũ
-                btn.setBorder(BorderFactory.createLineBorder(new Color(220, 220, 220), 1));
-            }
-        });
+        }
 
-        // Sự kiện click (Giữ nguyên logic cũ của ông)
-        // Trong hàm createActionButton (nếu dùng Quick Actions)
-        btn.addActionListener(e -> {
-            if (text.contains("Thêm") || text.contains("Học sinh")) {
-                openStudentManagement();
-            }
-            else if (text.contains("Môn học") || text.contains("Lớp học")) { // Giả sử nút đó tên là Môn học
-                this.dispose();
-                SwingUtilities.invokeLater(() -> new SubjectManagement().setVisible(true));
-            }
-            else {
-                JOptionPane.showMessageDialog(Dashboard.this, "Chức năng: " + text);
-            }
-        });
+        if (classScores.isEmpty()) return new String[]{"Chưa có dữ liệu điểm theo lớp"};
 
-        return btn;
+        // Tính ĐTB cho từng lớp
+        Map<String, Double> classAvgMap = new HashMap<>();
+        for (Map.Entry<String, List<Double>> entry : classScores.entrySet()) {
+            double sum = 0;
+            for (double score : entry.getValue()) sum += score;
+            double avg = sum / entry.getValue().size();
+            classAvgMap.put(entry.getKey(), avg);
+        }
+
+        // Sắp xếp giảm dần theo điểm
+        List<Map.Entry<String, Double>> sortedClasses = new ArrayList<>(classAvgMap.entrySet());
+        sortedClasses.sort((e1, e2) -> e2.getValue().compareTo(e1.getValue()));
+
+        // Lấy Top 4
+        List<String> result = new ArrayList<>();
+        for (int i = 0; i < Math.min(4, sortedClasses.size()); i++) {
+            Map.Entry<String, Double> entry = sortedClasses.get(i);
+            int studentCount = classScores.get(entry.getKey()).size();
+            result.add(String.format("%s: %d HS có điểm - ĐTB: %.2f", entry.getKey(), studentCount, entry.getValue()));
+        }
+
+        return result.toArray(new String[0]);
     }
+
     // ============================================================
-    // SIMPLE CARD
+    // UI COMPONENTS HELPER
     // ============================================================
     private JPanel createSimpleCard(String title, String value) {
         JPanel card = new JPanel(new BorderLayout(15, 15));
@@ -343,9 +312,6 @@ public class Dashboard extends JFrame {
         return card;
     }
 
-    // ============================================================
-    // INFO CARD
-    // ============================================================
     private JPanel createInfoCard(String title, String[] items) {
         JPanel card = new JPanel(new BorderLayout(10, 10));
         card.setBackground(Color.WHITE);
@@ -363,52 +329,32 @@ public class Dashboard extends JFrame {
         listPanel.setLayout(new BoxLayout(listPanel, BoxLayout.Y_AXIS));
         listPanel.setBackground(Color.WHITE);
 
-        for (String item : items) {
-            JLabel lblItem = new JLabel("• " + item);
-            lblItem.setFont(new Font("Arial", Font.PLAIN, 12));
-            lblItem.setForeground(new Color(100, 100, 100));
-            lblItem.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
-            listPanel.add(lblItem);
+        if (items != null) {
+            for (String item : items) {
+                JLabel lblItem = new JLabel("• " + item);
+                lblItem.setFont(new Font("Arial", Font.PLAIN, 13));
+                lblItem.setForeground(new Color(80, 80, 80));
+                lblItem.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
+                listPanel.add(lblItem);
+            }
         }
 
-        card.add(listPanel, BorderLayout.CENTER);
+        // Thêm khoảng trống đẩy nội dung lên trên
+        listPanel.add(Box.createVerticalGlue());
 
+        card.add(listPanel, BorderLayout.CENTER);
         return card;
     }
 
-    // ============================================================
-    // HELPER METHODS
-    // ============================================================
-    private void openStudentManagement() {
-        this.dispose();
-        SwingUtilities.invokeLater(() -> {
-            new StudentManagement().setVisible(true);
-        });
-    }
-
     private void logout() {
-        int confirm = JOptionPane.showConfirmDialog(this,
-                "Bạn có chắc muốn đăng xuất?",
-                "Xác nhận",
-                JOptionPane.YES_NO_OPTION);
-
+        int confirm = JOptionPane.showConfirmDialog(this, "Bạn có chắc muốn đăng xuất?", "Xác nhận", JOptionPane.YES_NO_OPTION);
         if (confirm == JOptionPane.YES_OPTION) {
             this.dispose();
-            SwingUtilities.invokeLater(() -> {
-                new Login().setVisible(true);
-            });
+            new Login().setVisible(true);
         }
     }
 
     public static void main(String[] args) {
-        try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        SwingUtilities.invokeLater(() -> {
-            new Dashboard().setVisible(true);
-        });
+        SwingUtilities.invokeLater(() -> new Dashboard().setVisible(true));
     }
 }

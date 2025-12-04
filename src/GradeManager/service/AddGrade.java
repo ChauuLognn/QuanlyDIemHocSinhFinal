@@ -5,48 +5,18 @@ import Exception.Validator;
 import GradeManager.Grade;
 import GradeManager.data.GradeDatabase;
 
-import java.util.Scanner;
 
 public class AddGrade {
     private GradeDatabase gradeDB = GradeDatabase.getGradeDB();
-    String studentID;
-    private double regularScore;
-    private double midtermScore;
-    private double finalScore;
 
-    Scanner sc = new Scanner(System.in);
-
-    public void addOrUpdate() {
-        System.out.print("Nhập mã học sinh: ");
-        studentID = sc.nextLine();
-
-        //Kiểm tra xem học sinh có mã studentID đã có điểm hay chưa
-        if (gradeDB.getGrades().containsKey(studentID)){
-            System.out.println("Học sinh có mã " + studentID + " đã có điểm trên hệ thống!");
-            return;
+    public void addScore(String studentId, double regular, double midterm, double fin) throws Exception {
+        // 1. Validate điểm hợp lệ
+        if (regular < 0 || regular > 10 || midterm < 0 || midterm > 10 || fin < 0 || fin > 10) {
+            throw new Exception("Điểm số phải nằm trong khoảng 0 - 10!");
         }
 
-        try {
-            System.out.print("Nhập điểm thường xuyên: ");
-            regularScore = sc.nextDouble();
-            Validator.validateScore(regularScore);
-
-            System.out.print("Nhập điểm giữa kì: ");
-            midtermScore = sc.nextDouble();
-            Validator.validateScore(midtermScore);
-
-            System.out.print("Nhập điểm cuối kì: ");
-            finalScore = sc.nextDouble();
-            Validator.validateScore(finalScore);
-            sc.nextLine();
-
-            Grade newGrade = new Grade(studentID, regularScore, midtermScore, finalScore);
-            gradeDB.addOrUpdateGrade(newGrade);
-
-            System.out.println("Cập nhật điểm thành công!");
-        } catch (InvalidScoreException e){
-            System.out.println("Lỗi: " + e.getMessage());
-        }
-
+        // 2. Lưu vào DB
+        Grade grade = new Grade(studentId, regular, midterm, fin);
+        gradeDB.addOrUpdateGrade(grade);
     }
 }

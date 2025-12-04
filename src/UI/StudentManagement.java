@@ -412,8 +412,9 @@ public class StudentManagement extends JFrame {
             double reg = parseScore(txtRegularScore);
             double mid = parseScore(txtMidtermScore);
             double fin = parseScore(txtFinalScore);
-            Grade newGrade = new Grade(id, reg, mid, fin);
-            GradeDatabase.getGradeDB().addOrUpdateGrade(newGrade);
+            // Gọi Service thêm điểm
+            GradeManager.service.AddGrade gradeService = new GradeManager.service.AddGrade();
+            gradeService.addScore(id, reg, mid, fin);
 
             loadDataFromDatabase(); // Refresh bảng & Bộ lọc
             clearFields();
@@ -444,8 +445,10 @@ public class StudentManagement extends JFrame {
             double reg = parseScore(txtRegularScore);
             double mid = parseScore(txtMidtermScore);
             double fin = parseScore(txtFinalScore);
-            Grade grade = new Grade(newId, reg, mid, fin);
-            GradeDatabase.getGradeDB().addOrUpdateGrade(grade);
+
+            // Gọi Service sửa điểm
+            GradeManager.service.EditGrade gradeEditService = new GradeManager.service.EditGrade();
+            gradeEditService.editScore(newId, reg, mid, fin);
 
             loadDataFromDatabase(); // Refresh bảng & Bộ lọc
             clearFields();

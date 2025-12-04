@@ -4,6 +4,7 @@ import StudentManager.Student;
 import java.io.Serializable;
 import java.util.ArrayList;
 
+// ✅ FIX: Thêm implements Serializable
 public class Classes implements Serializable {
     private static final long serialVersionUID = 1L;
 
@@ -29,4 +30,9 @@ public class Classes implements Serializable {
 
     public int getStudentNumber(){ return studentNumber;}
     public ArrayList<Student> getStudents() { return students;}
+
+    @Override
+    public String toString() {
+        return classID + " - " + className + " (" + studentNumber + " học sinh)";
+    }
 }

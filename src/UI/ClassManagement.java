@@ -220,17 +220,17 @@ public class ClassManagement extends JFrame {
 
     private void loadDataFromDatabase() {
         tableModel.setRowCount(0);
+        ClassDatabase.getClassDB().syncAllClassesStudentCount();
         ArrayList<Classes> list = ClassDatabase.getClassDB().getAllClasses();
 
         for (Classes c : list) {
             tableModel.addRow(new Object[]{
                     c.getClassID(),
                     c.getClassName(),
-                    c.getStudentNumber()
+                    c.getStudentNumber() // Đã được sync chính xác
             });
         }
     }
-
     private void addClass() {
         try {
             String id = txtClassId.getText().trim();

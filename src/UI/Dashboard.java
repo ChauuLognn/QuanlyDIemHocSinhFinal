@@ -37,10 +37,10 @@ public class Dashboard extends JFrame {
         // 1. Top Navigation Bar
         add(createTopNavBar(), BorderLayout.NORTH);
 
-        // 2. Left Sidebar Menu (Đã thêm Cài đặt)
+        // 2. Left Sidebar Menu
         add(createSidebarMenu(), BorderLayout.WEST);
 
-        // 3. Main Content Area (Dữ liệu thật)
+        // 3. Main Content Area
         mainPanel = createMainContent();
         add(mainPanel, BorderLayout.CENTER);
     }
@@ -86,7 +86,7 @@ public class Dashboard extends JFrame {
     }
 
     // ============================================================
-    // SIDEBAR MENU (Đã thêm Cài đặt)
+    // SIDEBAR MENU
     // ============================================================
     private JPanel createSidebarMenu() {
         JPanel sidebar = new JPanel();
@@ -103,7 +103,6 @@ public class Dashboard extends JFrame {
                 "Lớp học",
                 "Thống kê",
                 "Báo cáo",
-                "Cài đặt" // <--- Mục mới
         };
 
         for (int i = 0; i < menuItems.length; i++) {
@@ -152,8 +151,6 @@ public class Dashboard extends JFrame {
             } else if (text.equals("Báo cáo")) {
                 this.dispose();
                 new ReportManagement().setVisible(true);
-            } else if (text.equals("Cài đặt")) {
-                JOptionPane.showMessageDialog(this, "Chức năng Cài đặt đang phát triển!");
             }
         });
 

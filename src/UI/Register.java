@@ -1,24 +1,26 @@
 package UI;
 
+import AccountManager.service.AddAccount;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
 public class Register extends JFrame {
-    private JTextField txtName, txtUsername;
+    private JTextField txtUsername;
     private JPasswordField txtPassword, txtConfirmPassword;
     private JButton btnRegister;
     private JLabel lblLoginLink;
 
     public Register() {
         setTitle("Student Management System - Register");
-        setSize(400, 650); // Chiều cao lớn hơn Login để chứa nhiều ô
+        setSize(400, 550); // Thu nhỏ chiều cao lại cho vừa vặn
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setResizable(false);
 
-        // 1. MAIN PANEL: Gradient Xám Porsche (Giống hệt Login)
+        // 1. MAIN PANEL: Gradient Xám Porsche
         JPanel mainPanel = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
@@ -53,34 +55,26 @@ public class Register extends JFrame {
         lblTitle.setBounds(30, 50, 200, 40);
         mainPanel.add(lblTitle);
 
-        // --- 1. HỌ VÀ TÊN ---
-        JLabel lblName = createLabel("Full Name", 110);
-        mainPanel.add(lblName);
-        JPanel pnlName = createInputPanel(135);
-        JLabel iconName = createIcon("📝", pnlName);
-        txtName = createTextField(pnlName);
-        mainPanel.add(pnlName);
-
-        // --- 2. USERNAME ---
-        JLabel lblUser = createLabel("Username", 200);
+        // --- 1. USERNAME (Đã đẩy lên vị trí cũ của Full Name) ---
+        JLabel lblUser = createLabel("Username", 110);
         mainPanel.add(lblUser);
-        JPanel pnlUser = createInputPanel(225);
+        JPanel pnlUser = createInputPanel(135);
         JLabel iconUser = createIcon("👤", pnlUser);
         txtUsername = createTextField(pnlUser);
         mainPanel.add(pnlUser);
 
-        // --- 3. PASSWORD ---
-        JLabel lblPass = createLabel("Password", 290);
+        // --- 2. PASSWORD ---
+        JLabel lblPass = createLabel("Password", 200);
         mainPanel.add(lblPass);
-        JPanel pnlPass = createInputPanel(315);
+        JPanel pnlPass = createInputPanel(225);
         JLabel iconPass = createIcon("🔒", pnlPass);
         txtPassword = createPasswordField(pnlPass);
         mainPanel.add(pnlPass);
 
-        // --- 4. CONFIRM PASSWORD ---
-        JLabel lblConfirm = createLabel("Confirm Password", 380);
+        // --- 3. CONFIRM PASSWORD ---
+        JLabel lblConfirm = createLabel("Confirm Password", 290);
         mainPanel.add(lblConfirm);
-        JPanel pnlConfirm = createInputPanel(405);
+        JPanel pnlConfirm = createInputPanel(315);
         JLabel iconConfirm = createIcon("🔑", pnlConfirm);
         txtConfirmPassword = createPasswordField(pnlConfirm);
         mainPanel.add(pnlConfirm);
@@ -98,7 +92,8 @@ public class Register extends JFrame {
         btnRegister.setForeground(Color.WHITE);
         btnRegister.setBackground(new Color(255, 255, 255, 40));
         btnRegister.setBorder(BorderFactory.createLineBorder(Color.WHITE, 1));
-        btnRegister.setBounds(85, 490, 230, 45); // Căn giữa
+        // Đẩy nút lên vị trí mới
+        btnRegister.setBounds(85, 400, 230, 45);
         btnRegister.setFocusPainted(false);
         btnRegister.setContentAreaFilled(false);
         btnRegister.setOpaque(false);
@@ -110,21 +105,23 @@ public class Register extends JFrame {
             public void mouseExited(MouseEvent e) { btnRegister.setBackground(new Color(255, 255, 255, 40)); btnRegister.repaint(); }
         });
 
+        // SỰ KIỆN BẤM NÚT ĐĂNG KÝ
         btnRegister.addActionListener(e -> handleRegister());
+
         mainPanel.add(btnRegister);
 
         // --- LINK BACK TO LOGIN ---
         lblLoginLink = new JLabel("<html>Already have an account? <u>Login here</u></html>");
         lblLoginLink.setFont(new Font("Arial", Font.PLAIN, 12));
         lblLoginLink.setForeground(Color.WHITE);
-        lblLoginLink.setBounds(0, 560, 400, 30); // Width 400 để căn giữa
+        // Đẩy link lên vị trí mới
+        lblLoginLink.setBounds(0, 470, 400, 30);
         lblLoginLink.setHorizontalAlignment(SwingConstants.CENTER);
         lblLoginLink.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
         lblLoginLink.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                // Quay lại màn hình Login
                 Register.this.dispose();
                 new Login().setVisible(true);
             }
@@ -134,8 +131,7 @@ public class Register extends JFrame {
         add(mainPanel);
     }
 
-    // ================= HELPER METHODS (Tái sử dụng từ Login) =================
-
+    // ================= HELPER METHODS =================
     private JLabel createLabel(String text, int y) {
         JLabel lbl = new JLabel(text);
         lbl.setFont(new Font("Arial", Font.PLAIN, 14));
@@ -201,27 +197,27 @@ public class Register extends JFrame {
 
     // ================= LOGIC XỬ LÝ =================
     private void handleRegister() {
-        String name = txtName.getText().trim();
-        String user = txtUsername.getText().trim();
-        String pass = new String(txtPassword.getPassword());
-        String confirm = new String(txtConfirmPassword.getPassword());
+        try {
+            // 1. Lấy dữ liệu từ giao diện
+            String user = txtUsername.getText().trim();
+            String pass = new String(txtPassword.getPassword());
+            String confirm = new String(txtConfirmPassword.getPassword());
 
-        if (name.isEmpty() || user.isEmpty() || pass.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Vui lòng nhập đầy đủ thông tin!", "Lỗi", JOptionPane.WARNING_MESSAGE);
-            return;
+            // TỰ ĐỘNG GÁN ID = USERNAME (Vì code backend AddAccount vẫn cần ID)
+            String id = user;
+
+            // 2. Gọi Service để xử lý
+            AddAccount service = new AddAccount();
+            service.addNewAccount(user, pass, confirm, id);
+
+            // 3. Nếu thành công
+            JOptionPane.showMessageDialog(this, "Đăng ký thành công! Hãy đăng nhập.");
+            this.dispose();
+            new Login().setVisible(true);
+
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, ex.getMessage(), "Lỗi đăng ký", JOptionPane.ERROR_MESSAGE);
         }
-
-        if (!pass.equals(confirm)) {
-            JOptionPane.showMessageDialog(this, "Mật khẩu nhập lại không khớp!", "Lỗi", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-
-        // Tạm thời chỉ thông báo thành công (chưa có DB)
-        JOptionPane.showMessageDialog(this, "Đăng ký thành công! Vui lòng đăng nhập.");
-
-        // Chuyển về Login
-        this.dispose();
-        new Login().setVisible(true);
     }
 
     public static void main(String[] args) {

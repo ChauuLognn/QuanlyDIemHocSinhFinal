@@ -3,39 +3,33 @@ package AccountManager.service;
 import AccountManager.Account;
 import AccountManager.data.AccountDatabase;
 
-import java.util.Scanner;
-
 public class AddAccount {
-    Scanner sc = new Scanner(System.in);
     private AccountDatabase accountDB = AccountDatabase.getAccountDB();
-    String username;
-    String password;
-    String ID;
-    boolean isExit;
-    public void add(){
-        do {
-            isExit = false;
-            System.out.print("Nhập tên đăng nhập: ");
-            username = sc.nextLine();
-            Account a = accountDB.findAccountByUsername(username);
-            if (a != null){
-                System.out.println("Tên đăng nhập đã được sử dụng. Bạn muốn: \n" +
-                        "1. Nhập lại tên khác\n" +
-                        "2. Thoát");
-                int choose = sc.nextInt();
-                sc.nextLine();
-                if (choose == 2) break;
-                isExit = true;
-            }
-        } while (!isExit);
 
-        System.out.print("Nhập mật khẩu: ");
-        password = sc.nextLine();
-        password = accountDB.hashSHA256(password);
-        System.out.print("Nhập mã học sinh/ giáo viên: ");
-        ID = sc.nextLine();
+    // Hàm thêm mới (Gọi từ nút Đăng ký hoặc nút Thêm trên giao diện)
+    public void addNewAccount(String username, String password, String confirmPass, String id) throws Exception {
+        // 1. Kiểm tra rỗng
+        if (username.trim().isEmpty() || password.isEmpty() || id.trim().isEmpty()) {
+            throw new Exception("Vui lòng nhập đầy đủ thông tin!");
+        }
 
-        accountDB.addAccount(username, password, ID);
-        System.out.println("Thêm tài khoản thành công!");
+        // 2. Kiểm tra mật khẩu khớp
+        if (!password.equals(confirmPass)) {
+            throw new Exception("Mật khẩu xác nhận không khớp!");
+        }
+
+        // 3. Kiểm tra độ dài mật khẩu (Ví dụ)
+        if (password.length() < 6) {
+            throw new Exception("Mật khẩu phải từ 6 ký tự trở lên!");
+        }
+
+        // 4. Mã hóa mật khẩu trước khi lưu
+        String hashedPassword = accountDB.hashSHA256(password);
+
+        // 5. Tạo đối tượng và gửi xuống Database
+        Account newAcc = new Account(username, hashedPassword, id);
+
+        // Hàm này bên Database sẽ ném lỗi nếu trùng user
+        accountDB.addAccount(newAcc);
     }
 }

@@ -1,58 +1,49 @@
 package AccountManager.data;
 
 import AccountManager.Account;
-
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
-import java.util.Scanner;
+import java.util.ArrayList;
+import java.util.List;
 
 public class AccountDatabase {
     private static AccountDatabase accountDB = new AccountDatabase();
-
     private HashMap<String, Account> accounts = new HashMap<>();
 
-    Scanner sc = new Scanner(System.in);
-
-    private AccountDatabase(){}
+    private AccountDatabase(){
+        // Constructor rỗng
+        // Bạn có thể thêm dữ liệu mẫu ở đây để test nếu muốn
+        accounts.put("admin", new Account("admin", hashSHA256("1011"), "AD01"));
+    }
 
     public static AccountDatabase getAccountDB(){ return accountDB;}
 
-    //Hiển thị tất cả accounts
-    public void showAllAccounts(){
-        if (accounts.size() == 0){
-            System.out.println("Danh sách tài khoản trống!");
-            return;
-        }
-        accounts.forEach((username, account) -> {
-            System.out.println("Tên đăng nhập: " + account.getUsername() +
-                                "Mật khẩu: " + account.getPassword() +
-                                "Mã học sinh/ Giáo viên: " + account.getID());
-        });
+
+    //Hiển thị danh sách tài khoản
+    public List<Account> getAllAccounts() {
+        return new ArrayList<>(accounts.values());
     }
 
     //Thêm tài khoản
-    public void addAccount(String username, String password, String ID){
-        int oldSize = accounts.size();
-        Account newAccount = new Account(username, password, ID);
-        accounts.put(username, newAccount);
-        if (oldSize < accounts.size()){
-            System.out.println("Đã thêm tài khoản thành công!");
-        } else {
-            System.out.println("Lỗi! Thêm tài khoản không thành công!");
+    public void addAccount(Account acc) throws Exception {
+        if (accounts.containsKey(acc.getUsername())) {
+            throw new Exception("Tên đăng nhập '" + acc.getUsername() + "' đã tồn tại!");
         }
+        accounts.put(acc.getUsername(), acc);
     }
 
     //Tìm kiếm tài khoản theo tên đăng nhập
     public Account findAccountByUsername (String username){
-        Account a = accounts.get(username);
-
-        return a;
+        return accounts.get(username);
     }
 
     //Xóa tài khoản
-    public boolean deleteAccount(String username){
-        return accounts.remove(username) != null;
+    public void deleteAccount(String username) throws Exception {
+        if (!accounts.containsKey(username)) {
+            throw new Exception("Tài khoản không tồn tại để xóa!");
+        }
+        accounts.remove(username);
     }
 
     //Dùng hashing mã hóa mật khẩu
@@ -79,40 +70,33 @@ public class AccountDatabase {
 
     //Kiểm tra đăng nhập
     public boolean checkLogin(String username, String password){
-        Account a = accountDB.findAccountByUsername(username);
-        if (a == null){
-            System.out.println("Sai tên đăng nhập!");
+        Account a = accounts.get(username);
+        if (a == null) {
             return false;
         }
-        String savedPassword = a.getPassword();
-        if (!password.equals(savedPassword)){
-            System.out.println("Sai mật khẩu!");
-            return false;
-        }
-        return true;
+        String inputHash = hashSHA256(password);
+        return a.getPassword().equals(inputHash);
     }
 
     //Cập nhật tài khoản
-    public void updateUsername (String oldUsername, String newUsername){
-        Account a = accounts.get(oldUsername);
-
-        if (a == null){
-            System.out.println("Không tìm thấy tài khoản!");
-            return;
+    public void updateUsername(String oldUsername, String newUsername) throws Exception {
+        if (!accounts.containsKey(oldUsername)) {
+            throw new Exception("Tài khoản cũ không tồn tại!");
+        }
+        if (accounts.containsKey(newUsername)) {
+            throw new Exception("Tên đăng nhập mới đã bị trùng!");
         }
 
-        //Xóa username cũ
-        accounts.remove(oldUsername);
-
-        //Cập nhat username mới
-        a.setUsername(newUsername);
-
-        //Lưu lại với username mới
-        accounts.put(newUsername, a);
+        Account acc = accounts.remove(oldUsername);
+        acc.setUsername(newUsername);
+        accounts.put(newUsername, acc);
     }
-    // Thêm vào cuối file AccountDatabase.java
-    public java.util.HashMap<String, Account> getAccountsMap() {
-        return accounts;
+
+    // Cập nhật Password
+    public void updatePassword(String username, String newPass) throws Exception {
+        Account acc = accounts.get(username);
+        if (acc == null) throw new Exception("Không tìm thấy tài khoản!");
+        acc.setPassword(hashSHA256(newPass));
     }
 }
 

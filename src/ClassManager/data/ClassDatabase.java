@@ -47,7 +47,6 @@ public class ClassDatabase {
         old.setClassID(newID);
         old.setClassName(newName);
 
-        // ✅ CẬP NHẬT LẠI TÊN LỚP CHO TẤT CẢ HỌC SINH TRONG LỚP
         if (!oldID.equalsIgnoreCase(newID)) {
             updateStudentsClassName(oldID, newID);
         }
@@ -59,7 +58,6 @@ public class ClassDatabase {
             throw new Exception("Không tìm thấy lớp " + classID);
         }
 
-        // ✅ KIỂM TRA LỚP CÓ HỌC SINH KHÔNG
         if (c.getStudentNumber() > 0 || !c.getStudents().isEmpty()) {
             throw new Exception("Không thể xóa lớp còn " + c.getStudentNumber() +
                     " học sinh! Hãy chuyển họ sang lớp khác hoặc xóa học sinh trước.");

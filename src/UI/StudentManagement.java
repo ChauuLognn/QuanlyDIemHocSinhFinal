@@ -483,7 +483,14 @@ public class StudentManagement extends JFrame {
         txtId.setText(tableModel.getValueAt(row, 0).toString());
         txtName.setText(tableModel.getValueAt(row, 1).toString());
         txtClass.setText(tableModel.getValueAt(row, 2).toString());
-        cboGender.setSelectedItem(tableModel.getValueAt(row, 3));
+
+        String gender = tableModel.getValueAt(row, 3).toString();
+        if (gender.equalsIgnoreCase("Nam") || gender.equalsIgnoreCase("Nữ")) {
+            cboGender.setSelectedItem(gender);
+        } else {
+            cboGender.setSelectedIndex(0); // Default Nam
+        }
+
         txtRegularScore.setText(tableModel.getValueAt(row, 4).toString());
         txtMidtermScore.setText(tableModel.getValueAt(row, 5).toString());
         txtFinalScore.setText(tableModel.getValueAt(row, 6).toString());

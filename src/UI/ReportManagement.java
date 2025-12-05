@@ -5,11 +5,7 @@ import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import ReportManager.service.ReportService;
 
 public class ReportManagement extends JFrame {
@@ -60,7 +56,6 @@ public class ReportManagement extends JFrame {
         btnBack.setFocusPainted(false);
         btnBack.setCursor(new Cursor(Cursor.HAND_CURSOR));
         btnBack.addActionListener(e -> backToDashboard());
-        // Hover
         btnBack.addMouseListener(new MouseAdapter() {
             public void mouseEntered(MouseEvent e) { btnBack.setBackground(new Color(120, 120, 120)); }
             public void mouseExited(MouseEvent e) { btnBack.setBackground(new Color(100, 100, 100)); }
@@ -105,6 +100,7 @@ public class ReportManagement extends JFrame {
 
         // 2. Chọn lớp
         content.add(createLabel("Chọn lớp:"));
+        // Bạn có thể gọi Service để lấy danh sách lớp thật từ DB ở đây
         cboClass = new JComboBox<>(new String[]{"Tất cả", "6A1", "7A2", "8A1", "9A3"});
         styleComboBox(cboClass);
         content.add(cboClass);
@@ -124,8 +120,9 @@ public class ReportManagement extends JFrame {
 
         content.add(Box.createRigidArea(new Dimension(0, 10)));
 
-        btnExport = createButton("Xuất file (.txt)", new Color(40, 167, 69));
-        btnExport.addActionListener(e -> exportToFile());
+        // --- SỬA NÚT NÀY THÀNH XUẤT EXCEL ---
+        btnExport = createButton("Xuất Excel (.csv)", new Color(40, 167, 69));
+        btnExport.addActionListener(e -> exportToExcel());
         content.add(btnExport);
 
         panel.add(content);
@@ -142,11 +139,10 @@ public class ReportManagement extends JFrame {
         lblPreview.setFont(new Font("Arial", Font.BOLD, 13));
         panel.add(lblPreview, BorderLayout.NORTH);
 
-        // TextArea giả lập trang giấy
         txtPreview = new JTextArea();
-        txtPreview.setFont(new Font("Monospaced", Font.PLAIN, 13)); // Dùng font đơn cách để căn lề đẹp
+        txtPreview.setFont(new Font("Monospaced", Font.PLAIN, 13));
         txtPreview.setEditable(false);
-        txtPreview.setMargin(new Insets(20, 40, 20, 40)); // Lề trang giấy
+        txtPreview.setMargin(new Insets(20, 40, 20, 40));
         txtPreview.setText("Vui lòng chọn cấu hình bên trái và bấm 'Xem trước'...");
 
         JScrollPane scroll = new JScrollPane(txtPreview);
@@ -192,39 +188,44 @@ public class ReportManagement extends JFrame {
 
     // ================= BUSINESS LOGIC =================
 
-
-    // 1. Tạo nội dung báo cáo
+    // 1. Tạo nội dung báo cáo (Text Preview)
     private void generateReportPreview() {
         String type = (String) cboReportType.getSelectedItem();
         String className = (String) cboClass.getSelectedItem();
         String semester = (String) cboSemester.getSelectedItem();
 
         ReportService service = new ReportService();
-        // UI chỉ việc hiển thị, không cần biết chuỗi được cộng trừ thế nào
-        String content = service.generateReportContent(type, className, semester);
+        // Gọi hàm tạo text để hiển thị lên màn hình
+        String content = service.generateReportContent(type, className, semester); // Bạn nhớ giữ lại hàm cũ trong Service nhé
 
         txtPreview.setText(content);
         txtPreview.setCaretPosition(0);
     }
 
-    // 2. Xuất file ra máy tính
-    private void exportToFile() {
-        if (txtPreview.getText().isEmpty() || txtPreview.getText().startsWith("Vui lòng")) {
-            JOptionPane.showMessageDialog(this, "Hãy bấm 'Xem trước' để tạo dữ liệu!", "Cảnh báo", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-
+    // 2. Xuất file ra Excel (CSV)
+    private void exportToExcel() {
         JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setDialogTitle("Lưu file báo cáo");
-        fileChooser.setSelectedFile(new File("BaoCao_" + System.currentTimeMillis() + ".txt"));
+        fileChooser.setDialogTitle("Lưu file Excel (.csv)");
+        // Đặt tên mặc định có đuôi .csv
+        fileChooser.setSelectedFile(new File("BaoCao_" + System.currentTimeMillis() + ".csv"));
 
         if (fileChooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
             try {
-                ReportService service = new ReportService();
-                service.saveReportToFile(fileChooser.getSelectedFile(), txtPreview.getText());
+                // Lấy thông tin từ form
+                String type = (String) cboReportType.getSelectedItem();
+                String className = (String) cboClass.getSelectedItem();
+                String semester = (String) cboSemester.getSelectedItem();
 
-                JOptionPane.showMessageDialog(this, "Xuất file thành công!");
+                // Gọi Service tạo nội dung CSV (Dữ liệu bảng tính)
+                ReportService service = new ReportService();
+                String csvContent = service.generateCSVContent(type, className, semester);
+
+                // Lưu file
+                service.saveReportToFile(fileChooser.getSelectedFile(), csvContent);
+
+                JOptionPane.showMessageDialog(this, "Xuất file Excel thành công!\nBạn có thể mở file này bằng Excel.");
             } catch (Exception ex) {
+                ex.printStackTrace();
                 JOptionPane.showMessageDialog(this, "Lỗi: " + ex.getMessage());
             }
         }

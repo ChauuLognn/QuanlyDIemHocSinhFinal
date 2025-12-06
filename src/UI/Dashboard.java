@@ -1,281 +1,282 @@
 package UI;
 
+import AccountManager.Account;
+import ClassManager.data.ClassDatabase;
 import GradeManager.Grade;
 import GradeManager.data.GradeDatabase;
+import GradeManager.service.DashboardService;
 import StudentManager.Student;
 import StudentManager.data.StudentDatabase;
-import ClassManager.data.ClassDatabase;
 
 import javax.swing.*;
+import javax.swing.border.LineBorder;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.util.*;
-import java.util.List;
-import java.util.stream.Collectors;
-import GradeManager.service.DashboardService;
 
 public class Dashboard extends JFrame {
     private JPanel mainPanel;
-    private String username = "ADMIN"; // Có thể lấy từ Login sau này
+    private Account currentAccount;
 
     // Colors
-    private final Color primaryColor = new Color(70, 70, 70);
-    private final Color secondaryColor = new Color(245, 245, 245);
+    private final Color primaryColor = Color.decode("#1E40AF");
+    private final Color bgColor      = Color.decode("#F3F4F6");
+    private final Color cardColor    = Color.WHITE;
+    private final Color textColor    = Color.decode("#111827");
+    private final Color grayText     = Color.decode("#6B7280");
 
-    // Database References
+    private final Font fontTitle = new Font("Segoe UI", Font.BOLD, 24);
+    private final Font fontHead  = new Font("Segoe UI", Font.BOLD, 16);
+    private final Font fontText  = new Font("Segoe UI", Font.PLAIN, 14);
+
+    // DB
     private final StudentDatabase studentDB = StudentDatabase.getStudentDB();
     private final GradeDatabase gradeDB = GradeDatabase.getGradeDB();
     private final ClassDatabase classDB = ClassDatabase.getClassDB();
 
-    public Dashboard() {
-        setTitle("Hệ thống quản lý học sinh");
-        setSize(1200, 700);
+    public Dashboard(Account account) {
+        this.currentAccount = account;
+        setTitle("Hệ thống Quản lý - " + getRoleName());
+        setSize(1280, 800);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setLayout(new BorderLayout());
 
-        // 1. Top Navigation Bar
-        add(createTopNavBar(), BorderLayout.NORTH);
-
-        // 2. Left Sidebar Menu (Đã thêm Cài đặt)
-        add(createSidebarMenu(), BorderLayout.WEST);
-
-        // 3. Main Content Area (Dữ liệu thật)
+        add(createSidebar(), BorderLayout.WEST);
         mainPanel = createMainContent();
         add(mainPanel, BorderLayout.CENTER);
     }
 
-    // ============================================================
-    // TOP BAR
-    // ============================================================
-    private JPanel createTopNavBar() {
-        JPanel navbar = new JPanel(new BorderLayout());
-        navbar.setPreferredSize(new Dimension(0, 60));
-        navbar.setBackground(primaryColor);
-        navbar.setBorder(BorderFactory.createEmptyBorder(15, 25, 15, 25));
+    private String getRoleName() {
+        if (currentAccount == null) return "Khách";
+        String r = currentAccount.getRole();
+        if ("admin".equals(r)) return "Quản trị viên";
+        if ("teacher".equals(r)) return "Giáo viên";
+        return "Học sinh";
+    }
 
-        JLabel title = new JLabel("QUẢN LÝ ĐIỂM HỌC SINH");
-        title.setFont(new Font("Arial", Font.BOLD, 16));
-        title.setForeground(Color.WHITE);
-        navbar.add(title, BorderLayout.WEST);
+    // --- SIDEBAR ---
+    private JPanel createSidebar() {
+        JPanel sidebar = new JPanel(null);
+        sidebar.setPreferredSize(new Dimension(260, 0));
+        sidebar.setBackground(cardColor);
+        sidebar.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, new Color(229, 231, 235)));
 
-        JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 0));
-        rightPanel.setBackground(primaryColor);
+        JLabel lblBrand = new JLabel("<html><span style='color:#1E40AF'>SCHOOL</span> ADMIN</html>");
+        lblBrand.setFont(new Font("Segoe UI", Font.BOLD, 22));
+        lblBrand.setBounds(30, 30, 200, 30);
+        sidebar.add(lblBrand);
 
-        JLabel userName = new JLabel("Xin chào, " + username);
-        userName.setFont(new Font("Arial", Font.PLAIN, 13));
-        userName.setForeground(Color.WHITE);
-        rightPanel.add(userName);
+        JPanel userPanel = new JPanel(null);
+        userPanel.setBackground(new Color(239, 246, 255));
+        userPanel.setBounds(20, 80, 220, 70);
+        userPanel.setBorder(new LineBorder(new Color(219, 234, 254), 1, true));
 
-        JLabel separator = new JLabel("|");
-        separator.setForeground(new Color(150, 150, 150));
-        rightPanel.add(separator);
+        JLabel lblAvatar = new JLabel("👤");
+        lblAvatar.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 28));
+        lblAvatar.setBounds(15, 10, 40, 50);
+        userPanel.add(lblAvatar);
+
+        JLabel lblUser = new JLabel(currentAccount.getUsername());
+        lblUser.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        lblUser.setForeground(primaryColor);
+        lblUser.setBounds(60, 15, 150, 20);
+        userPanel.add(lblUser);
+
+        JLabel lblRole = new JLabel(getRoleName());
+        lblRole.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        lblRole.setForeground(grayText);
+        lblRole.setBounds(60, 35, 150, 20);
+        userPanel.add(lblRole);
+        sidebar.add(userPanel);
+
+        int y = 180;
+        String role = currentAccount.getRole();
+
+        sidebar.add(createMenuBtn("Trang chủ", "🏠", y, true));
+        y += 55;
+
+        if ("admin".equals(role) || "teacher".equals(role)) {
+            sidebar.add(createMenuBtn("Quản lý học sinh", "👨‍🎓", y, false));
+            y += 55;
+        }
+
+        if ("admin".equals(role)) {
+            sidebar.add(createMenuBtn("Lớp học", "🏫", y, false));
+            y += 55;
+            sidebar.add(createMenuBtn("Báo cáo & Thống kê", "📊", y, false));
+            y += 55;
+        }
+
+        if ("student".equals(role)) {
+            sidebar.add(createMenuBtn("Xem điểm cá nhân", "📝", y, false));
+            y += 55;
+        }
 
         JButton btnLogout = new JButton("Đăng xuất");
-        btnLogout.setFont(new Font("Arial", Font.PLAIN, 12));
+        btnLogout.setBounds(20, 700, 220, 40);
+        btnLogout.setFont(new Font("Segoe UI", Font.BOLD, 14));
         btnLogout.setForeground(Color.WHITE);
-        btnLogout.setBackground(primaryColor);
-        btnLogout.setBorder(null);
+        btnLogout.setBackground(new Color(220, 38, 38));
+        btnLogout.setBorderPainted(false);
         btnLogout.setFocusPainted(false);
         btnLogout.setCursor(new Cursor(Cursor.HAND_CURSOR));
         btnLogout.addActionListener(e -> logout());
-        rightPanel.add(btnLogout);
-
-        navbar.add(rightPanel, BorderLayout.EAST);
-        return navbar;
-    }
-
-    // ============================================================
-    // SIDEBAR MENU
-    // ============================================================
-    private JPanel createSidebarMenu() {
-        JPanel sidebar = new JPanel();
-        sidebar.setLayout(new BoxLayout(sidebar, BoxLayout.Y_AXIS));
-        sidebar.setPreferredSize(new Dimension(200, 0));
-        sidebar.setBackground(Color.WHITE);
-        sidebar.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, new Color(220, 220, 220)));
-
-        sidebar.add(Box.createRigidArea(new Dimension(0, 20)));
-
-        String[] menuItems = {
-                "Trang chủ",
-                "Quản lý học sinh",
-                "Lớp học",
-                "Thống kê",
-                "Báo cáo",
-        };
-
-        for (int i = 0; i < menuItems.length; i++) {
-            JButton menuBtn = createMenuButton(menuItems[i], i == 0); // Active mục đầu tiên
-            sidebar.add(menuBtn);
-        }
+        sidebar.add(btnLogout);
 
         return sidebar;
     }
 
-    private JButton createMenuButton(String text, boolean isActive) {
-        JButton btn = new JButton(text);
-        btn.setMaximumSize(new Dimension(200, 40));
-        btn.setAlignmentX(Component.LEFT_ALIGNMENT);
-        btn.setFont(new Font("Arial", Font.PLAIN, 13));
-        btn.setForeground(isActive ? primaryColor : new Color(100, 100, 100));
-        btn.setBackground(isActive ? secondaryColor : Color.WHITE);
-        btn.setBorder(BorderFactory.createEmptyBorder(10, 25, 10, 25));
-        btn.setFocusPainted(false);
-        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+    private JButton createMenuBtn(String text, String icon, int y, boolean isActive) {
+        JButton btn = new JButton("  " + icon + "   " + text);
+        btn.setBounds(20, y, 220, 45);
+        btn.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         btn.setHorizontalAlignment(SwingConstants.LEFT);
+        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btn.setFocusPainted(false);
+        btn.setBorderPainted(false);
 
         if (isActive) {
-            btn.setBorder(BorderFactory.createCompoundBorder(
-                    BorderFactory.createMatteBorder(0, 3, 0, 0, primaryColor),
-                    BorderFactory.createEmptyBorder(10, 22, 10, 25)
-            ));
+            btn.setBackground(primaryColor);
+            btn.setForeground(Color.WHITE);
+            btn.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        } else {
+            btn.setBackground(cardColor);
+            btn.setForeground(textColor);
+            btn.addMouseListener(new MouseAdapter() {
+                public void mouseEntered(MouseEvent e) { btn.setBackground(new Color(243, 244, 246)); }
+                public void mouseExited(MouseEvent e) { btn.setBackground(cardColor); }
+            });
         }
-
-        btn.addMouseListener(new MouseAdapter() {
-            public void mouseEntered(MouseEvent e) { if (!isActive) btn.setBackground(new Color(250, 250, 250)); }
-            public void mouseExited(MouseEvent e) { if (!isActive) btn.setBackground(Color.WHITE); }
-        });
-
-        // Xử lý chuyển màn hình
-        btn.addActionListener(e -> {
-            if (text.equals("Quản lý học sinh")) {
-                this.dispose();
-                new StudentManagement().setVisible(true);
-            } else if (text.equals("Lớp học")) {
-                this.dispose();
-                new ClassManagement().setVisible(true);
-            } else if (text.equals("Thống kê")) {
-                this.dispose();
-                new Statistics().setVisible(true);
-            } else if (text.equals("Báo cáo")) {
-                this.dispose();
-                new ReportManagement().setVisible(true);
-            }
-        });
-
+        btn.addActionListener(e -> handleMenuClick(text));
         return btn;
     }
 
-    // ============================================================
-    // MAIN CONTENT (DỮ LIỆU THẬT)
-    // ============================================================
+    // --- MAIN CONTENT ---
     private JPanel createMainContent() {
-        JPanel content = new JPanel(new BorderLayout(20, 20));
-        content.setBackground(secondaryColor);
-        content.setBorder(BorderFactory.createEmptyBorder(30, 30, 30, 30));
+        JPanel content = new JPanel(null);
+        content.setBackground(bgColor);
 
-        // 1. Welcome
-        JPanel topSection = new JPanel(new BorderLayout());
-        topSection.setBackground(secondaryColor);
-        JLabel welcome = new JLabel("Tổng quan hệ thống");
-        welcome.setFont(new Font("Arial", Font.BOLD, 22));
-        topSection.add(welcome, BorderLayout.WEST);
-        content.add(topSection, BorderLayout.NORTH);
+        JLabel lblTitle = new JLabel("Tổng quan hệ thống");
+        lblTitle.setFont(fontTitle);
+        lblTitle.setForeground(textColor);
+        lblTitle.setBounds(40, 30, 400, 40);
+        content.add(lblTitle);
 
-        // 2. Stats Cards (Số liệu thật)
-        JPanel statsPanel = new JPanel(new GridLayout(1, 2, 20, 0));
-        statsPanel.setBackground(secondaryColor);
-        statsPanel.setPreferredSize(new Dimension(0, 150));
-
-        // Lấy số liệu thực tế
         int totalStudents = studentDB.getAllStudents().size();
         int totalClasses = classDB.getAllClasses().size();
 
-        statsPanel.add(createSimpleCard("Tổng học sinh", String.valueOf(totalStudents)));
-        statsPanel.add(createSimpleCard("Tổng số lớp", String.valueOf(totalClasses)));
-
-        // 3. Bottom Info: Phân loại & Lớp nổi bật
-        JPanel bottomPanel = new JPanel(new GridLayout(1, 2, 20, 0));
-        bottomPanel.setBackground(secondaryColor);
-        bottomPanel.setPreferredSize(new Dimension(0, 200));
+        content.add(createCard("Tổng học sinh", String.valueOf(totalStudents), 40, 90));
+        content.add(createCard("Tổng số lớp", String.valueOf(totalClasses), 300, 90));
+        content.add(createCard("Học kỳ", "HK1 - 2025", 560, 90));
 
         DashboardService service = new DashboardService();
-
-        // Tính toán dữ liệu thật cho 2 bảng này
-        bottomPanel.add(createInfoCard("Phân loại học lực", service.calculatePerformanceStats()));
-        bottomPanel.add(createInfoCard("Lớp học nổi bật (Top ĐTB)", service.calculateTopClasses()));
-
-
-        // Container giữa chứa Stats và Bottom
-        JPanel centerContainer = new JPanel(new BorderLayout(0, 20));
-        centerContainer.setBackground(secondaryColor);
-        centerContainer.add(statsPanel, BorderLayout.NORTH);
-        centerContainer.add(bottomPanel, BorderLayout.CENTER);
-
-        content.add(centerContainer, BorderLayout.CENTER);
+        content.add(createListCard("Phân loại học lực", service.calculatePerformanceStats(), 40, 240, 400));
+        content.add(createListCard("Lớp học tiêu biểu (Top ĐTB)", service.calculateTopClasses(), 480, 240, 480));
 
         return content;
     }
 
-    // ============================================================
-    // UI COMPONENTS HELPER
-    // ============================================================
-    private JPanel createSimpleCard(String title, String value) {
-        JPanel card = new JPanel(new BorderLayout(15, 15));
-        card.setBackground(Color.WHITE);
-        card.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(230, 230, 230), 1),
-                BorderFactory.createEmptyBorder(25, 25, 25, 25)
-        ));
+    private JPanel createCard(String title, String value, int x, int y) {
+        JPanel card = new JPanel(null);
+        card.setBounds(x, y, 240, 120);
+        card.setBackground(cardColor);
+        card.setBorder(BorderFactory.createMatteBorder(1, 1, 3, 1, new Color(229, 231, 235)));
+
+        JLabel lblVal = new JLabel(value);
+        lblVal.setFont(new Font("Segoe UI", Font.BOLD, 32));
+        lblVal.setForeground(primaryColor);
+        lblVal.setBounds(20, 20, 200, 40);
+        card.add(lblVal);
 
         JLabel lblTitle = new JLabel(title);
-        lblTitle.setFont(new Font("Arial", Font.PLAIN, 13));
-        lblTitle.setForeground(new Color(120, 120, 120));
-        card.add(lblTitle, BorderLayout.NORTH);
-
-        JLabel lblValue = new JLabel(value);
-        lblValue.setFont(new Font("Arial", Font.BOLD, 36));
-        lblValue.setForeground(primaryColor);
-        card.add(lblValue, BorderLayout.CENTER);
-
+        lblTitle.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        lblTitle.setForeground(grayText);
+        lblTitle.setBounds(20, 70, 200, 20);
+        card.add(lblTitle);
         return card;
     }
 
-    private JPanel createInfoCard(String title, String[] items) {
-        JPanel card = new JPanel(new BorderLayout(10, 10));
-        card.setBackground(Color.WHITE);
-        card.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(230, 230, 230), 1),
-                BorderFactory.createEmptyBorder(20, 20, 20, 20)
-        ));
+    private JPanel createListCard(String title, String[] items, int x, int y, int width) {
+        JPanel card = new JPanel(null);
+        card.setBounds(x, y, width, 400);
+        card.setBackground(cardColor);
+        card.setBorder(BorderFactory.createMatteBorder(1, 1, 3, 1, new Color(229, 231, 235)));
 
-        JLabel lblTitle = new JLabel(title);
-        lblTitle.setFont(new Font("Arial", Font.BOLD, 14));
-        lblTitle.setForeground(primaryColor);
-        card.add(lblTitle, BorderLayout.NORTH);
+        JLabel lblHeader = new JLabel(title);
+        lblHeader.setFont(fontHead);
+        lblHeader.setForeground(textColor);
+        lblHeader.setBounds(25, 20, 300, 30);
 
-        JPanel listPanel = new JPanel();
-        listPanel.setLayout(new BoxLayout(listPanel, BoxLayout.Y_AXIS));
-        listPanel.setBackground(Color.WHITE);
+        JSeparator sep = new JSeparator();
+        sep.setBounds(25, 55, width - 50, 1);
+        sep.setForeground(new Color(229, 231, 235));
+        card.add(lblHeader);
+        card.add(sep);
 
         if (items != null) {
+            int itemY = 70;
             for (String item : items) {
-                JLabel lblItem = new JLabel("• " + item);
-                lblItem.setFont(new Font("Arial", Font.PLAIN, 13));
-                lblItem.setForeground(new Color(80, 80, 80));
-                lblItem.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
-                listPanel.add(lblItem);
+                JLabel lblItem = new JLabel("•  " + item);
+                lblItem.setFont(fontText);
+                lblItem.setForeground(new Color(55, 65, 81));
+                lblItem.setBounds(25, itemY, width - 50, 25);
+                card.add(lblItem);
+                itemY += 35;
             }
         }
-
-        // Thêm khoảng trống đẩy nội dung lên trên
-        listPanel.add(Box.createVerticalGlue());
-
-        card.add(listPanel, BorderLayout.CENTER);
         return card;
+    }
+
+    // --- LOGIC ---
+    private void handleMenuClick(String menuName) {
+        if ("Quản lý học sinh".equals(menuName)) {
+            this.dispose();
+            new StudentManagement(currentAccount).setVisible(true);
+        }
+        else if ("Lớp học".equals(menuName)) {
+            this.dispose();
+            new ClassManagement(currentAccount).setVisible(true);
+        }
+        else if ("Báo cáo & Thống kê".equals(menuName)) {
+            this.dispose();
+            // ✅ ĐÃ SỬA: Truyền Account vào Statistics
+            new Statistics(currentAccount).setVisible(true);
+        }
+        else if ("Xem điểm cá nhân".equals(menuName)) {
+            showStudentPersonalScore();
+        }
+    }
+
+    private void showStudentPersonalScore() {
+        String studentID = currentAccount.getID();
+        if (studentID == null || studentID.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Tài khoản này chưa liên kết với mã học sinh nào!");
+            return;
+        }
+        Grade g = gradeDB.getGradeByStudentID(studentID);
+        Student s = studentDB.findByID(studentID);
+
+        if (s == null) {
+            JOptionPane.showMessageDialog(this, "Không tìm thấy thông tin học sinh!");
+            return;
+        }
+        String msg = "Học sinh: " + s.getStudentName() + "\nLớp: " + s.getStudentClass() + "\n----------------\n";
+        if (g != null) {
+            msg += "Điểm TB: " + String.format("%.2f", g.getAverage());
+        } else msg += "Chưa có điểm.";
+        JOptionPane.showMessageDialog(this, msg, "Bảng điểm", JOptionPane.INFORMATION_MESSAGE);
     }
 
     private void logout() {
-        int confirm = JOptionPane.showConfirmDialog(this, "Bạn có chắc muốn đăng xuất?", "Xác nhận", JOptionPane.YES_NO_OPTION);
-        if (confirm == JOptionPane.YES_OPTION) {
+        if (JOptionPane.showConfirmDialog(this, "Đăng xuất?", "Xác nhận", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
             this.dispose();
             new Login().setVisible(true);
         }
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new Dashboard().setVisible(true));
+        Account mock = new Account("admin", "", "", "admin");
+        SwingUtilities.invokeLater(() -> new Dashboard(mock).setVisible(true));
     }
 }

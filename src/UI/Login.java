@@ -18,10 +18,10 @@ public class Login extends JFrame {
     private JComboBox<String> cboRole;
     private JButton btnLogin;
 
-    // Colors (Màu sắc)
-    private final Color primaryColor = Color.decode("#1E40AF"); // Xanh đậm
-    private final Color accentColor  = Color.decode("#3B82F6"); // Xanh sáng (Hover)
-    private final Color grayText     = Color.decode("#6B7280"); // Xám chữ
+    // Colors
+    private final Color primaryColor = Color.decode("#1E40AF");
+    private final Color accentColor  = Color.decode("#3B82F6");
+    private final Color grayText     = Color.decode("#6B7280");
 
     public Login() {
         setTitle("Đăng nhập hệ thống");
@@ -30,13 +30,12 @@ public class Login extends JFrame {
         setLocationRelativeTo(null);
         setResizable(false);
 
-        // Panel nền trắng toàn bộ
         JPanel mainPanel = new JPanel();
         mainPanel.setBackground(Color.WHITE);
         mainPanel.setLayout(null);
         setContentPane(mainPanel);
 
-        // --- TIÊU ĐỀ (Màu Xanh Đậm) ---
+        // Header
         JLabel lblTitle = new JLabel("ĐĂNG NHẬP");
         lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 28));
         lblTitle.setForeground(primaryColor);
@@ -51,7 +50,7 @@ public class Login extends JFrame {
         lblSub.setBounds(0, 90, 435, 20);
         mainPanel.add(lblSub);
 
-        // --- 1. CHỌN VAI TRÒ ---
+        // Role
         JLabel lblRole = new JLabel("Vai trò");
         lblRole.setFont(new Font("Segoe UI", Font.BOLD, 13));
         lblRole.setForeground(grayText);
@@ -65,7 +64,7 @@ public class Login extends JFrame {
         cboRole.setFocusable(false);
         mainPanel.add(cboRole);
 
-        // --- 2. USERNAME ---
+        // Username
         JLabel lblUser = new JLabel("Tên đăng nhập / Mã SV");
         lblUser.setFont(new Font("Segoe UI", Font.BOLD, 13));
         lblUser.setForeground(grayText);
@@ -77,7 +76,7 @@ public class Login extends JFrame {
         txtUsername.setBounds(40, 245, 355, 40);
         mainPanel.add(txtUsername);
 
-        // --- 3. PASSWORD ---
+        // Password
         JLabel lblPass = new JLabel("Mật khẩu");
         lblPass.setFont(new Font("Segoe UI", Font.BOLD, 13));
         lblPass.setForeground(grayText);
@@ -89,7 +88,7 @@ public class Login extends JFrame {
         txtPassword.setBounds(40, 330, 355, 40);
         mainPanel.add(txtPassword);
 
-        // Hiện mật khẩu
+        // Show pass
         JLabel lblShowPass = new JLabel("Hiện mật khẩu");
         lblShowPass.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         lblShowPass.setForeground(accentColor);
@@ -105,42 +104,30 @@ public class Login extends JFrame {
         });
         mainPanel.add(lblShowPass);
 
-        // --- 4. NÚT ĐĂNG NHẬP (CUSTOM PAINT) ---
-        // Tự vẽ nút để đảm bảo màu nền hiện đúng trên mọi Windows
+        // Button Login
         btnLogin = new JButton("ĐĂNG NHẬP") {
             @Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-                // Đổi màu khi di chuột
-                if (getModel().isRollover()) {
-                    g2.setColor(accentColor);
-                } else {
-                    g2.setColor(primaryColor);
-                }
-
-                // Vẽ hình chữ nhật bo tròn (Radius 40)
+                if (getModel().isRollover()) g2.setColor(accentColor);
+                else g2.setColor(primaryColor);
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 40, 40);
                 g2.dispose();
-
                 super.paintComponent(g);
             }
         };
         btnLogin.setBounds(40, 420, 355, 45);
         btnLogin.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        btnLogin.setForeground(Color.WHITE); // Chữ màu trắng
-
-        // Xóa các hiệu ứng mặc định gây lỗi hiển thị
+        btnLogin.setForeground(Color.WHITE);
         btnLogin.setContentAreaFilled(false);
         btnLogin.setBorderPainted(false);
         btnLogin.setFocusPainted(false);
         btnLogin.setCursor(new Cursor(Cursor.HAND_CURSOR));
-
         btnLogin.addActionListener(e -> handleLogin());
         mainPanel.add(btnLogin);
 
-        // Link Đăng ký
+        // Register Link
         JLabel lblReg = new JLabel("Chưa có tài khoản?");
         lblReg.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         lblReg.setForeground(grayText);
@@ -163,38 +150,28 @@ public class Login extends JFrame {
         getRootPane().setDefaultButton(btnLogin);
     }
 
-    // ================= HELPER: LÀM ĐẸP TEXT FIELD =================
     private void styleTextField(JTextField tf) {
         tf.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         tf.setForeground(Color.BLACK);
-        // Viền dưới màu xám nhạt
         tf.setBorder(BorderFactory.createCompoundBorder(
                 new MatteBorder(0, 0, 2, 0, new Color(220, 220, 220)),
                 BorderFactory.createEmptyBorder(5, 5, 5, 5)
         ));
         tf.setBackground(Color.WHITE);
-
-        // Khi click vào thì viền đổi màu xanh
         tf.addFocusListener(new FocusAdapter() {
-            @Override
             public void focusGained(FocusEvent e) {
                 tf.setBorder(BorderFactory.createCompoundBorder(
                         new MatteBorder(0, 0, 2, 0, accentColor),
-                        BorderFactory.createEmptyBorder(5, 5, 5, 5)
-                ));
+                        BorderFactory.createEmptyBorder(5, 5, 5, 5)));
             }
-
-            @Override
             public void focusLost(FocusEvent e) {
                 tf.setBorder(BorderFactory.createCompoundBorder(
                         new MatteBorder(0, 0, 2, 0, new Color(220, 220, 220)),
-                        BorderFactory.createEmptyBorder(5, 5, 5, 5)
-                ));
+                        BorderFactory.createEmptyBorder(5, 5, 5, 5)));
             }
         });
     }
 
-    // ================= LOGIC ĐĂNG NHẬP =================
     private void handleLogin() {
         String username = txtUsername.getText().trim();
         String password = new String(txtPassword.getPassword());
@@ -204,12 +181,11 @@ public class Login extends JFrame {
 
         try {
             Account acc = authService.login(username, password, role);
-
             this.dispose();
             JOptionPane.showMessageDialog(null, "Đăng nhập thành công!");
 
-            // Mở Dashboard
-            new Dashboard().setVisible(true);
+            // ✅ ĐÃ SỬA: Truyền Account vào Dashboard
+            new Dashboard(acc).setVisible(true);
 
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, ex.getMessage(), "Lỗi đăng nhập", JOptionPane.ERROR_MESSAGE);
@@ -217,10 +193,6 @@ public class Login extends JFrame {
     }
 
     public static void main(String[] args) {
-        // Sử dụng giao diện hệ thống cho đẹp
-        try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (Exception ignored) {}
         SwingUtilities.invokeLater(() -> new Login().setVisible(true));
     }
 }

@@ -40,11 +40,6 @@ public class AddAccount {
             throw new Exception("Username không được chứa khoảng trắng!");
         }
 
-        // 5. ✅ THÊM: Kiểm tra username và ID không trùng nhau (Tránh nhầm lẫn)
-        if (username.trim().equalsIgnoreCase(id.trim())) {
-            throw new Exception("Username và ID không nên giống nhau để tránh nhầm lẫn!");
-        }
-
         // 6. Mã hóa mật khẩu trước khi lưu
         String hashedPassword = accountDB.hashSHA256(password);
 

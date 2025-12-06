@@ -403,22 +403,36 @@ public class StudentManagement extends JFrame {
 
     private void addStudent() {
         if (!validateInput()) return;
+
         try {
             String id = txtId.getText().trim();
             String name = txtName.getText().trim();
+
+            // ✅ THÊM: Kiểm tra giới tính
+            if (cboGender.getSelectedItem() == null) {
+                JOptionPane.showMessageDialog(this, "Vui lòng chọn giới tính!");
+                return;
+            }
             String gender = cboGender.getSelectedItem().toString();
 
-            // SỬA 4: Lấy ID từ chuỗi "Mã - Tên"
-            // Nếu item là "9A1 - Lớp 9A1" -> Lấy "9A1"
+            // ✅ THÊM: Kiểm tra lớp học
+            if (cboClassInput.getSelectedItem() == null || cboClassInput.getItemCount() == 0) {
+                JOptionPane.showMessageDialog(this,
+                        "Vui lòng chọn lớp!\n\nLưu ý: Bạn phải tạo lớp học trước ở menu 'Lớp học'",
+                        "Thiếu thông tin", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
             String selectedClass = cboClassInput.getSelectedItem().toString();
             String classID = selectedClass.split(" - ")[0].trim();
 
             AddStudent service = new AddStudent();
-            service.add(id, name, classID, gender); // Truyền classID
+            service.add(id, name, classID, gender);
 
-            double reg = parseScore(txtRegularScore);
-            double mid = parseScore(txtMidtermScore);
-            double fin = parseScore(txtFinalScore);
+            // ✅ THÊM: Kiểm tra điểm trước khi parse
+            double reg = parseScoreSafe(txtRegularScore);
+            double mid = parseScoreSafe(txtMidtermScore);
+            double fin = parseScoreSafe(txtFinalScore);
 
             GradeManager.service.AddGrade gradeService = new GradeManager.service.AddGrade();
             gradeService.addScore(id, reg, mid, fin);
@@ -428,13 +442,17 @@ public class StudentManagement extends JFrame {
             JOptionPane.showMessageDialog(this, "Thêm thành công!");
 
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Lỗi: " + e.getMessage());
+            JOptionPane.showMessageDialog(this, "Lỗi: " + e.getMessage(),
+                    "Lỗi thêm học sinh", JOptionPane.ERROR_MESSAGE);
         }
     }
 
     private void updateStudent() {
         int row = table.getSelectedRow();
-        if (row < 0) { JOptionPane.showMessageDialog(this, "Chọn dòng để sửa!"); return; }
+        if (row < 0) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn học sinh cần sửa trong bảng!");
+            return;
+        }
         if (!validateInput()) return;
 
         try {
@@ -443,18 +461,30 @@ public class StudentManagement extends JFrame {
 
             String newId = txtId.getText().trim();
             String name = txtName.getText().trim();
+
+            // ✅ THÊM: Kiểm tra giới tính
+            if (cboGender.getSelectedItem() == null) {
+                JOptionPane.showMessageDialog(this, "Vui lòng chọn giới tính!");
+                return;
+            }
             String gender = cboGender.getSelectedItem().toString();
 
-            // SỬA 5: Lấy ID từ ComboBox khi Update
+            // ✅ THÊM: Kiểm tra lớp học
+            if (cboClassInput.getSelectedItem() == null) {
+                JOptionPane.showMessageDialog(this, "Vui lòng chọn lớp!");
+                return;
+            }
+
             String selectedClass = cboClassInput.getSelectedItem().toString();
             String classID = selectedClass.split(" - ")[0].trim();
 
             EditStudent service = new EditStudent();
             service.edit(oldID, newId, name, classID, gender);
 
-            double reg = parseScore(txtRegularScore);
-            double mid = parseScore(txtMidtermScore);
-            double fin = parseScore(txtFinalScore);
+            // ✅ THÊM: Kiểm tra điểm trước khi parse
+            double reg = parseScoreSafe(txtRegularScore);
+            double mid = parseScoreSafe(txtMidtermScore);
+            double fin = parseScoreSafe(txtFinalScore);
 
             GradeManager.service.EditGrade gradeEditService = new GradeManager.service.EditGrade();
             gradeEditService.editScore(newId, reg, mid, fin);
@@ -464,7 +494,8 @@ public class StudentManagement extends JFrame {
             JOptionPane.showMessageDialog(this, "Cập nhật thành công!");
 
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Lỗi: " + e.getMessage());
+            JOptionPane.showMessageDialog(this, "Lỗi: " + e.getMessage(),
+                    "Lỗi cập nhật", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -488,6 +519,24 @@ public class StudentManagement extends JFrame {
             } catch (Exception e) {
                 JOptionPane.showMessageDialog(this, "Lỗi: " + e.getMessage());
             }
+        }
+    }
+
+    private double parseScoreSafe(JTextField tf) {
+        String text = tf.getText().trim();
+        if (text.isEmpty()) return 0.0;
+
+        try {
+            double score = Double.parseDouble(text);
+            if (score < 0 || score > 10) {
+                throw new NumberFormatException("Điểm phải từ 0-10");
+            }
+            return score;
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(this,
+                    "Điểm không hợp lệ: " + text + "\nVui lòng nhập số từ 0-10",
+                    "Lỗi nhập liệu", JOptionPane.ERROR_MESSAGE);
+            throw new NumberFormatException("Điểm không hợp lệ");
         }
     }
 
@@ -535,8 +584,17 @@ public class StudentManagement extends JFrame {
 
 
     private boolean validateInput() {
-        if (txtId.getText().isEmpty() || txtName.getText().isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Vui lòng nhập Mã HS và Tên!");
+        // 1. Kiểm tra Mã HS
+        if (txtId.getText().trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Vui lòng nhập Mã học sinh!");
+            txtId.requestFocus();
+            return false;
+        }
+
+        // 2. Kiểm tra Tên
+        if (txtName.getText().trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Vui lòng nhập Họ và tên!");
+            txtName.requestFocus();
             return false;
         }
         return true;

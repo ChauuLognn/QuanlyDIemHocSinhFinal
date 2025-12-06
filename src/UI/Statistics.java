@@ -1,5 +1,6 @@
 package UI;
 
+import Database.DatabaseConnection;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
@@ -10,10 +11,7 @@ import java.sql.*;
 import java.text.DecimalFormat;
 
 public class Statistics extends JFrame {
-    // --- CẤU HÌNH DATABASE (Sửa lại đúng máy bạn) ---
-    String url = "jdbc:sqlserver://localhost:1433;databaseName=QuanLyHocSinhDB;encrypt=true;trustServerCertificate=true;";
-    String user = "sa";
-    String pass = "123456";
+    // ✅ ĐÃ SỬA: Bỏ cấu hình SQL Server, dùng DatabaseConnection chung
 
     // Colors
     private final Color primaryColor = new Color(70, 70, 70);
@@ -69,45 +67,62 @@ public class Statistics extends JFrame {
         add(content, BorderLayout.CENTER);
     }
 
-    // ================= DATABASE LOGIC =================
+    // ================= DATABASE LOGIC - ✅ ĐÃ SỬA =================
     private void loadDataFromDB() {
-        Connection con = null;
-        try {
-            con = DriverManager.getConnection(url, user, pass);
+        // ✅ SỬA: Dùng DatabaseConnection thay vì hardcode SQL Server
+        try (Connection con = DatabaseConnection.getConnection()) {
 
-            // 1. Lấy tổng số học sinh
-            PreparedStatement psHS = con.prepareStatement("SELECT COUNT(*) AS Tong FROM HocSinh");
-            ResultSet rsHS = psHS.executeQuery();
-            if (rsHS.next()) totalHS = rsHS.getInt("Tong");
+            if (con == null) {
+                JOptionPane.showMessageDialog(this,
+                        "Không thể kết nối Database!\nVui lòng kiểm tra MySQL đang chạy.",
+                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
 
-            // 2. Lấy tổng số lớp
-            PreparedStatement psLop = con.prepareStatement("SELECT COUNT(*) AS Tong FROM LopHoc"); // Check tên bảng LopHoc/Lop
-            ResultSet rsLop = psLop.executeQuery();
-            if (rsLop.next()) totalLop = rsLop.getInt("Tong");
+            // 1. Lấy tổng số học sinh - ✅ Kiểm tra tên bảng
+            String sqlHS = "SELECT COUNT(*) AS Tong FROM Student"; // Hoặc HocSinh tùy DB của bạn
+            try (PreparedStatement psHS = con.prepareStatement(sqlHS);
+                 ResultSet rsHS = psHS.executeQuery()) {
+                if (rsHS.next()) totalHS = rsHS.getInt("Tong");
+            } catch (SQLException e) {
+                System.err.println("⚠️ Lỗi đếm học sinh (Bảng có thể chưa tồn tại): " + e.getMessage());
+            }
 
-            // 3. Lấy thống kê điểm (Giả sử logic: Giỏi>=8, Khá>=6.5, TB>=5, Yếu<5)
-            // Lưu ý: Cần bảng DIEM có cột DTB (hoặc DiemTrungBinh)
+            // 2. Lấy tổng số lớp - ✅ Kiểm tra tên bảng
+            String sqlLop = "SELECT COUNT(*) AS Tong FROM Classes"; // Hoặc LopHoc
+            try (PreparedStatement psLop = con.prepareStatement(sqlLop);
+                 ResultSet rsLop = psLop.executeQuery()) {
+                if (rsLop.next()) totalLop = rsLop.getInt("Tong");
+            } catch (SQLException e) {
+                System.err.println("⚠️ Lỗi đếm lớp (Bảng có thể chưa tồn tại): " + e.getMessage());
+            }
+
+            // 3. Lấy thống kê điểm - ✅ Kiểm tra cột DiemTrungBinh
             String sqlScore = "SELECT " +
-                    "COUNT(CASE WHEN DiemTrungBinh >= 8.0 THEN 1 END) as Gioi, " +
-                    "COUNT(CASE WHEN DiemTrungBinh >= 6.5 AND DiemTrungBinh < 8.0 THEN 1 END) as Kha, " +
-                    "COUNT(CASE WHEN DiemTrungBinh >= 5.0 AND DiemTrungBinh < 6.5 THEN 1 END) as TB, " +
-                    "COUNT(CASE WHEN DiemTrungBinh < 5.0 THEN 1 END) as Yeu " +
-                    "FROM Diem";
+                    "SUM(CASE WHEN (regularScore + midtermScore*2 + finalScore*3)/6 >= 8.0 THEN 1 ELSE 0 END) as Gioi, " +
+                    "SUM(CASE WHEN (regularScore + midtermScore*2 + finalScore*3)/6 >= 6.5 AND (regularScore + midtermScore*2 + finalScore*3)/6 < 8.0 THEN 1 ELSE 0 END) as Kha, " +
+                    "SUM(CASE WHEN (regularScore + midtermScore*2 + finalScore*3)/6 >= 5.0 AND (regularScore + midtermScore*2 + finalScore*3)/6 < 6.5 THEN 1 ELSE 0 END) as TB, " +
+                    "SUM(CASE WHEN (regularScore + midtermScore*2 + finalScore*3)/6 < 5.0 THEN 1 ELSE 0 END) as Yeu " +
+                    "FROM Grade"; // Hoặc Diem
 
-            PreparedStatement psScore = con.prepareStatement(sqlScore);
-            ResultSet rsScore = psScore.executeQuery();
-            if (rsScore.next()) {
-                countGioi = rsScore.getInt("Gioi");
-                countKha = rsScore.getInt("Kha");
-                countTB = rsScore.getInt("TB");
-                countYeu = rsScore.getInt("Yeu");
+            try (PreparedStatement psScore = con.prepareStatement(sqlScore);
+                 ResultSet rsScore = psScore.executeQuery()) {
+                if (rsScore.next()) {
+                    countGioi = rsScore.getInt("Gioi");
+                    countKha = rsScore.getInt("Kha");
+                    countTB = rsScore.getInt("TB");
+                    countYeu = rsScore.getInt("Yeu");
+                }
+            } catch (SQLException e) {
+                System.err.println("⚠️ Lỗi thống kê điểm (Bảng Grade có thể chưa tồn tại): " + e.getMessage());
             }
 
         } catch (Exception e) {
             e.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Lỗi tải dữ liệu: " + e.getMessage());
-        } finally {
-            try { if(con!=null) con.close(); } catch(SQLException ex){}
+            JOptionPane.showMessageDialog(this,
+                    "Lỗi tải dữ liệu: " + e.getMessage() +
+                            "\n\nGợi ý: Kiểm tra tên bảng trong MySQL phải khớp với code",
+                    "Lỗi Database", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -148,7 +163,6 @@ public class Statistics extends JFrame {
         panel.setPreferredSize(new Dimension(0, 120));
         panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 120));
 
-        // Truyền biến số liệu thật vào đây
         panel.add(createKPICard("Tổng học sinh",String.valueOf(totalHS), new Color(52, 152, 219)));
         panel.add(createKPICard("Học sinh Giỏi", String.valueOf(countGioi), new Color(46, 204, 113)));
         panel.add(createKPICard("Học sinh Yếu", String.valueOf(countYeu), new Color(231, 76, 60)));
@@ -193,9 +207,9 @@ public class Statistics extends JFrame {
         return card;
     }
 
-    // ================= BAR CHART (ĐÃ SỬA ĐỂ NHẬN DATA) =================
+    // ================= BAR CHART =================
     class BarChartPanel extends JPanel {
-        private int[] values; // Dữ liệu động
+        private int[] values;
         private final String[] labels = {"Giỏi", "Khá", "TB", "Yếu"};
         private int maxValue = 10;
 
@@ -203,11 +217,10 @@ public class Statistics extends JFrame {
             setBackground(Color.WHITE);
             this.values = new int[]{g, k, tb, y};
 
-            // Tìm giá trị lớn nhất để vẽ tỉ lệ cột cho đẹp
             for(int val : values) {
                 if(val > maxValue) maxValue = val;
             }
-            maxValue = (int)(maxValue * 1.2); // Tăng trần lên 20% cho thoáng
+            maxValue = (int)(maxValue * 1.2);
         }
 
         @Override
@@ -225,8 +238,6 @@ public class Statistics extends JFrame {
 
             for (int i = 0; i < values.length; i++) {
                 int barHeight = (int) ((double) values[i] / maxValue * (height - 80));
-
-                // Tránh vẽ cột chiều cao âm hoặc 0 quá nhỏ
                 if (barHeight < 5 && values[i] > 0) barHeight = 5;
 
                 g2.setColor(chartColors[i]);
@@ -248,17 +259,16 @@ public class Statistics extends JFrame {
         }
     }
 
-    // ================= PIE CHART (ĐÃ SỬA ĐỂ TỰ TÍNH %) =================
+    // ================= PIE CHART =================
     class PieChartPanel extends JPanel {
-        private double[] values; // Lưu phần trăm
-        private String[] labels; // Lưu nhãn kèm %
+        private double[] values;
+        private String[] labels;
 
         public PieChartPanel(int g, int k, int tb, int y) {
             setBackground(Color.WHITE);
             double total = g + k + tb + y;
-            if (total == 0) total = 1; // Tránh chia cho 0
+            if (total == 0) total = 1;
 
-            // Tính phần trăm
             double pG = (g / total) * 100;
             double pK = (k / total) * 100;
             double pTB = (tb / total) * 100;
@@ -266,7 +276,6 @@ public class Statistics extends JFrame {
 
             this.values = new double[]{pG, pK, pTB, pY};
 
-            // Format số đẹp (ví dụ 33.5%)
             DecimalFormat df = new DecimalFormat("##0.0");
             this.labels = new String[]{
                     "Giỏi (" + df.format(pG) + "%)",

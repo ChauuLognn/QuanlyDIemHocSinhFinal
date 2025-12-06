@@ -83,8 +83,8 @@ public class AccountDatabase {
                 acc = new Account(
                         rs.getString("username"),
                         rs.getString("password"),
-                        // Sửa lại chỗ này để không bị lỗi "Column not found"
-                        rs.getString("studentID")
+                        rs.getString("studentID"),
+                        rs.getString("role")
                 );
             }
             conn.close();
@@ -114,14 +114,15 @@ public class AccountDatabase {
     }
 
     // ktra đăng nhập
-    public boolean checkLogin(String username, String password){
-        // 1. Tìm tài khoản trong DB
+    public Account login(String username, String password) {
         Account acc = findAccountByUsername(username);
-        if (acc == null) return false; // Không tìm thấy user
+        if (acc == null) return null;
 
-        // 2. Hash mật khẩu người dùng vừa nhập
         String inputHash = hashSHA256(password);
-        return acc.getPassword().equals(inputHash);
+        if (acc.getPassword().equals(inputHash)) {
+            return acc; // Trả về toàn bộ thông tin tài khoản nếu đúng pass
+        }
+        return null; // Sai pass
     }
 
     // đổi usename

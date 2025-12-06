@@ -19,59 +19,63 @@ public class AccountDatabase {
 
     public static AccountDatabase getAccountDB(){ return accountDB;}
 
-    //lấy tài khoản
+    // hiện thị all tk
     public List<Account> getAllAccounts() {
         List<Account> list = new ArrayList<>();
+        Connection conn = DatabaseConnection.getConnection();
+        // MySQL: tên bảng thường là chữ thường 'account'
         String sql = "SELECT * FROM account";
 
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-
+        try {
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ResultSet rs = ps.executeQuery();
             while(rs.next()){
                 list.add(new Account(
                         rs.getString("username"),
                         rs.getString("password"),
+                        // Quan trọng: Tên cột trong MySQL là studentID
                         rs.getString("studentID")
                 ));
             }
+            conn.close();
         } catch (Exception e) {
             e.printStackTrace();
         }
         return list;
     }
 
-    // thêm tài khoản
+    // thêm tk
     public void addAccount(Account acc) throws Exception {
         if (findAccountByUsername(acc.getUsername()) != null) {
             throw new Exception("Tên đăng nhập '" + acc.getUsername() + "' đã tồn tại!");
         }
 
+        Connection conn = DatabaseConnection.getConnection();
         String sql = "INSERT INTO account(username, password, studentID, role) VALUES (?, ?, ?, ?)";
 
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-
+        try {
+            PreparedStatement ps = conn.prepareStatement(sql);
             ps.setString(1, acc.getUsername());
-            ps.setString(2, acc.getPassword());
-            ps.setString(3, acc.getID());
-            ps.setString(4, "user");
+            ps.setString(2, acc.getPassword()); // Pass đã hash từ Service
+            ps.setString(3, acc.getID());       // ID này sẽ lưu vào cột studentID
+            ps.setString(4, "user");            // Mặc định role là user
 
             ps.executeUpdate();
+            conn.close();
         } catch (SQLException e) {
             e.printStackTrace();
             throw new Exception("Lỗi thêm tài khoản: " + e.getMessage());
         }
     }
 
-    // tìm tài khoản
+    // tìm tk
     public Account findAccountByUsername (String username){
         Account acc = null;
+        Connection conn = DatabaseConnection.getConnection();
         String sql = "SELECT * FROM account WHERE username = ?";
 
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-
+        try {
+            PreparedStatement ps = conn.prepareStatement(sql);
             ps.setString(1, username);
             ResultSet rs = ps.executeQuery();
 
@@ -79,29 +83,31 @@ public class AccountDatabase {
                 acc = new Account(
                         rs.getString("username"),
                         rs.getString("password"),
+                        // Sửa lại chỗ này để không bị lỗi "Column not found"
                         rs.getString("studentID")
                 );
             }
-            rs.close(); // Đóng ResultSet
+            conn.close();
         } catch (Exception e) {
             e.printStackTrace();
         }
         return acc;
     }
 
-    // xóa tk
+    // xóa tài khoản
     public void deleteAccount(String username) throws Exception {
         if (findAccountByUsername(username) == null) {
             throw new Exception("Tài khoản không tồn tại để xóa!");
         }
 
+        Connection conn = DatabaseConnection.getConnection();
         String sql = "DELETE FROM account WHERE username = ?";
 
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-
+        try {
+            PreparedStatement ps = conn.prepareStatement(sql);
             ps.setString(1, username);
             ps.executeUpdate();
+            conn.close();
         } catch (SQLException e) {
             throw new Exception("Lỗi xóa tài khoản: " + e.getMessage());
         }
@@ -109,9 +115,11 @@ public class AccountDatabase {
 
     // ktra đăng nhập
     public boolean checkLogin(String username, String password){
+        // 1. Tìm tài khoản trong DB
         Account acc = findAccountByUsername(username);
-        if (acc == null) return false;
+        if (acc == null) return false; // Không tìm thấy user
 
+        // 2. Hash mật khẩu người dùng vừa nhập
         String inputHash = hashSHA256(password);
         return acc.getPassword().equals(inputHash);
     }
@@ -121,37 +129,39 @@ public class AccountDatabase {
         if (findAccountByUsername(oldUsername) == null) throw new Exception("TK cũ không tồn tại!");
         if (findAccountByUsername(newUsername) != null) throw new Exception("TK mới đã bị trùng!");
 
+        Connection conn = DatabaseConnection.getConnection();
         String sql = "UPDATE account SET username = ? WHERE username = ?";
 
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-
+        try {
+            PreparedStatement ps = conn.prepareStatement(sql);
             ps.setString(1, newUsername);
             ps.setString(2, oldUsername);
             ps.executeUpdate();
+            conn.close();
         } catch (SQLException e) {
             throw new Exception("Lỗi đổi tên: " + e.getMessage());
         }
     }
 
-    // 7. đổi pass
+    // đổi mật khẩu
     public void updatePassword(String username, String newPass) throws Exception {
         if (findAccountByUsername(username) == null) throw new Exception("Không tìm thấy tài khoản!");
 
+        Connection conn = DatabaseConnection.getConnection();
         String sql = "UPDATE account SET password = ? WHERE username = ?";
 
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setString(1, hashSHA256(newPass));
+        try {
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ps.setString(1, hashSHA256(newPass)); // Nhớ hash trước khi lưu
             ps.setString(2, username);
             ps.executeUpdate();
+            conn.close();
         } catch (SQLException e) {
             throw new Exception("Lỗi đổi mật khẩu: " + e.getMessage());
         }
     }
 
-    // mã hóa mật khẩu
+    // hàm mã hóa
     public String hashSHA256(String password){
         try{
             MessageDigest digest = MessageDigest.getInstance("SHA-256");

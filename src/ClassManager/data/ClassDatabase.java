@@ -1,181 +1,158 @@
 package ClassManager.data;
 
 import ClassManager.Classes;
-import StudentManager.Student;
-import StudentManager.data.StudentDatabase;
+import Database.DatabaseConnection;
+import java.sql.*;
 import java.util.ArrayList;
 
 public class ClassDatabase {
     private static ClassDatabase classBD = new ClassDatabase();
-    private ArrayList<Classes> classes = new ArrayList<>();
+    private ClassDatabase(){}
+    public static ClassDatabase getClassDB(){ return classBD; }
 
-    private ClassDatabase() {
-    }
-
-    public static ClassDatabase getClassDB() {
-        return classBD;
-    }
-
+    // 1. Lấy danh sách lớp
     public ArrayList<Classes> getAllClasses() {
-        return classes;
-    }
+        ArrayList<Classes> list = new ArrayList<>();
+        Connection conn = DatabaseConnection.getConnection();
+        String sql = "SELECT * FROM classes";
 
-    public Classes findClassByID(String classID) {
-        for (Classes c : classes) {
-            if (c.getClassID().equalsIgnoreCase(classID)) {
-                return c;
+        try {
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ResultSet rs = ps.executeQuery();
+            while(rs.next()){
+                Classes c = new Classes(
+                        rs.getString("className"),
+                        rs.getString("classID")
+                );
+                // Lấy sĩ số đang lưu trong DB
+                c.setStudentNumber(rs.getInt("studentNumber"));
+                list.add(c);
             }
+            conn.close();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-        return null;
+        return list;
     }
 
+    // 2. Tìm lớp theo ID
+    public Classes findClassByID(String classID){
+        Classes c = null;
+        Connection conn = DatabaseConnection.getConnection();
+        String sql = "SELECT * FROM classes WHERE classID = ?";
+        try {
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ps.setString(1, classID);
+            ResultSet rs = ps.executeQuery();
+            if(rs.next()){
+                c = new Classes(rs.getString("className"), rs.getString("classID"));
+                c.setStudentNumber(rs.getInt("studentNumber"));
+            }
+            conn.close();
+        } catch (Exception e) { e.printStackTrace(); }
+        return c;
+    }
+
+    // 3. Thêm lớp mới
     public void addNewClass(Classes c) throws Exception {
-        if (findClassByID(c.getClassID()) != null) {
-            throw new Exception("Mã lớp " + c.getClassID() + " đã tồn tại!");
+        if (findClassByID(c.getClassID()) != null) throw new Exception("Mã lớp đã tồn tại!");
+
+        Connection conn = DatabaseConnection.getConnection();
+        String sql = "INSERT INTO classes(classID, className, studentNumber) VALUES (?, ?, 0)";
+
+        try {
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ps.setString(1, c.getClassID());
+            ps.setString(2, c.getClassName());
+            ps.executeUpdate();
+            conn.close();
+        } catch (SQLException e) {
+            throw new Exception("Lỗi thêm lớp: " + e.getMessage());
         }
-        classes.add(c);
     }
 
+    // 4. Sửa lớp
     public void updateClass(String oldID, String newID, String newName) throws Exception {
-        Classes old = findClassByID(oldID);
-        if (old == null) throw new Exception("Không tìm thấy lớp để sửa!");
+        Connection conn = DatabaseConnection.getConnection();
+        String sql = "UPDATE classes SET classID = ?, className = ? WHERE classID = ?";
 
-        // Nếu đổi mã lớp, check trùng
-        if (!oldID.equalsIgnoreCase(newID)) {
-            if (findClassByID(newID) != null) {
-                throw new Exception("Mã lớp mới bị trùng!");
+        try {
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ps.setString(1, newID);
+            ps.setString(2, newName);
+            ps.setString(3, oldID);
+            ps.executeUpdate();
+            conn.close();
+
+            // Cập nhật lại cột studentClass bên bảng student nếu mã lớp thay đổi
+            if(!oldID.equalsIgnoreCase(newID)) {
+                updateStudentsClassName(oldID, newID);
             }
-        }
-
-        old.setClassID(newID);
-        old.setClassName(newName);
-
-
-        if (!oldID.equalsIgnoreCase(newID)) {
-            updateStudentsClassName(oldID, newID);
+        } catch (SQLException e) {
+            throw new Exception("Lỗi sửa lớp: " + e.getMessage());
         }
     }
 
+    // 5. Xóa lớp
     public void deleteClass(String classID) throws Exception {
         Classes c = findClassByID(classID);
-        if (c == null) {
-            throw new Exception("Không tìm thấy lớp " + classID);
+        // Kiểm tra xem lớp có học sinh không (dựa vào cột studentNumber)
+        if(c != null && c.getStudentNumber() > 0) {
+            throw new Exception("Không thể xóa lớp đang có học sinh!");
         }
 
-
-        if (c.getStudentNumber() > 0 || !c.getStudents().isEmpty()) {
-            throw new Exception("Không thể xóa lớp còn " + c.getStudentNumber() +
-                    " học sinh! Hãy chuyển họ sang lớp khác hoặc xóa học sinh trước.");
-        }
-
-        classes.remove(c);
-    }
-
-    // ==================== CÁC HÀM MỚI ====================
-
-    /**
-     * Thêm học sinh vào lớp (Gọi khi AddStudent)
-     */
-    public void addStudentToClass(String studentID, String classID) throws Exception {
-        Classes c = findClassByID(classID);
-        if (c == null) {
-            throw new Exception("Lớp " + classID + " không tồn tại!");
-        }
-
-        Student s = StudentDatabase.getStudentDB().findByID(studentID);
-        if (s == null) {
-            throw new Exception("Không tìm thấy học sinh " + studentID);
-        }
-
-        // Kiểm tra xem học sinh đã có trong danh sách chưa
-        boolean exists = false;
-        for (Student student : c.getStudents()) {
-            if (student.getStudentID().equalsIgnoreCase(studentID)) {
-                exists = true;
-                break;
-            }
-        }
-
-        if (!exists) {
-            c.getStudents().add(s);
-            c.setStudentNumber(c.getStudents().size());
+        Connection conn = DatabaseConnection.getConnection();
+        String sql = "DELETE FROM classes WHERE classID = ?";
+        try {
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ps.setString(1, classID);
+            ps.executeUpdate();
+            conn.close();
+        } catch (SQLException e) {
+            throw new Exception("Lỗi xóa lớp: " + e.getMessage());
         }
     }
 
-    /**
-     * Xóa học sinh khỏi lớp (Gọi khi DeleteStudent)
-     */
-    public void removeStudentFromClass(String studentID, String classID) {
-        if (classID == null || classID.trim().isEmpty()) return;
+    // --- CÁC HÀM HỖ TRỢ ---
 
-        Classes c = findClassByID(classID);
-        if (c == null) return;
-
-        // Xóa học sinh khỏi danh sách
-        c.getStudents().removeIf(s -> s.getStudentID().equalsIgnoreCase(studentID));
-        c.setStudentNumber(c.getStudents().size());
-    }
-
-    /**
-     * Cập nhật lớp khi học sinh chuyển lớp (Gọi khi EditStudent)
-     */
-    public void updateStudentClass(String studentID, String oldClassID, String newClassID) throws Exception {
-        // Nếu không đổi lớp thì thôi
-        if (oldClassID.equalsIgnoreCase(newClassID)) return;
-
-        // Xóa khỏi lớp cũ
-        removeStudentFromClass(studentID, oldClassID);
-
-        // Thêm vào lớp mới
-        addStudentToClass(studentID, newClassID);
-    }
-
-    /**
-     * Cập nhật tên lớp cho tất cả học sinh khi đổi mã lớp
-     */
     private void updateStudentsClassName(String oldClassID, String newClassID) {
-        StudentDatabase studentDB = StudentDatabase.getStudentDB();
-        for (Student s : studentDB.getAllStudents()) {
-            if (s.getStudentClass().equalsIgnoreCase(oldClassID)) {
-                s.setStudentClass(newClassID);
-            }
+        Connection conn = DatabaseConnection.getConnection();
+        String sql = "UPDATE student SET studentClass = ? WHERE studentClass = ?";
+        try {
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ps.setString(1, newClassID);
+            ps.setString(2, oldClassID);
+            ps.executeUpdate();
+            conn.close();
+        } catch (SQLException e) { e.printStackTrace(); }
+    }
+
+    // Hàm quan trọng: Đếm lại số học sinh từ bảng student và cập nhật vào bảng classes
+    public void syncAllClassesStudentCount() {
+        Connection conn = DatabaseConnection.getConnection();
+        // Câu lệnh SQL update: Đếm từ bảng student rồi update sang classes
+        String sql = "UPDATE classes c SET studentNumber = (SELECT COUNT(*) FROM student s WHERE s.studentClass = c.classID)";
+
+        try {
+            Statement stmt = conn.createStatement();
+            stmt.executeUpdate(sql);
+            conn.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
     }
 
-    /**
-     * Đồng bộ lại số lượng học sinh cho TẤT CẢ các lớp
-     * (Gọi khi khởi động app hoặc sau khi import data)
-     */
-    public void syncAllClassesStudentCount() {
-        StudentDatabase studentDB = StudentDatabase.getStudentDB();
+    // Các hàm này giữ lại để tương thích với code cũ ở Service,
+    // nhiệm vụ chính là gọi sync để cập nhật sĩ số.
+    public void addStudentToClass(String studentID, String classID) throws Exception {
+        syncAllClassesStudentCount();
+    }
 
-        // Reset tất cả về 0
-        for (Classes c : classes) {
-            c.getStudents().clear();
-            c.setStudentNumber(0);
-        }
+    public void removeStudentFromClass(String studentID, String classID) {
+        syncAllClassesStudentCount();
+    }
 
-        // Đếm lại từ đầu
-        for (Student s : studentDB.getAllStudents()) {
-            String className = s.getStudentClass();
-            if (className == null || className.trim().isEmpty()) continue;
-
-            Classes c = findClassByID(className);
-            if (c != null) {
-                // Kiểm tra trùng trước khi thêm
-                boolean exists = false;
-                for (Student student : c.getStudents()) {
-                    if (student.getStudentID().equalsIgnoreCase(s.getStudentID())) {
-                        exists = true;
-                        break;
-                    }
-                }
-
-                if (!exists) {
-                    c.getStudents().add(s);
-                    c.setStudentNumber(c.getStudents().size());
-                }
-            }
-        }
+    public void updateStudentClass(String studentID, String oldClassID, String newClassID) throws Exception {
+        syncAllClassesStudentCount();
     }
 }

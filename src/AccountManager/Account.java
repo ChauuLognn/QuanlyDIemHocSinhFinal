@@ -8,11 +8,17 @@ public class Account implements Serializable {
     private String username;
     private String password;
     private String ID;
+    private String role;
 
-    public Account(String username, String password, String ID){
+    public Account(String username, String password, String ID, String role){
         this.username = username;
         this.password = password;
         this.ID = ID;
+        this.role = role;
+    }
+
+    public Account(String username, String password, String ID){
+        this(username, password, ID, "student");
     }
 
     public void setUsername(String username){ this.username = username; }
@@ -23,4 +29,7 @@ public class Account implements Serializable {
 
     public void setID(String ID){ this.ID = ID;}
     public String getID(){ return ID;}
+
+    public void setRole(String role) { this.role = role; }
+    public String getRole() { return role; }
 }

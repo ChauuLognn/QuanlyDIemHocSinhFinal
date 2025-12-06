@@ -7,6 +7,8 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
 import ReportManager.service.ReportService;
+import Database.DatabaseConnection;
+import java.sql.*;
 
 public class ReportManagement extends JFrame {
     // Colors
@@ -98,10 +100,11 @@ public class ReportManagement extends JFrame {
         content.add(cboReportType);
         content.add(Box.createRigidArea(new Dimension(0, 15)));
 
-        // 2. Chọn lớp
+        // 2. Chọn lớp - ✅ LẤY TỪ DATABASE THẬT
         content.add(createLabel("Chọn lớp:"));
-        // Bạn có thể gọi Service để lấy danh sách lớp thật từ DB ở đây
-        cboClass = new JComboBox<>(new String[]{"Tất cả", "6A1", "7A2", "8A1", "9A3"});
+        cboClass = new JComboBox<>();
+        cboClass.addItem("Tất cả"); // Mặc định
+        loadClassList(); // ✅ GỌI HÀM TẢI DANH SÁCH LỚP
         styleComboBox(cboClass);
         content.add(cboClass);
         content.add(Box.createRigidArea(new Dimension(0, 15)));
@@ -120,7 +123,6 @@ public class ReportManagement extends JFrame {
 
         content.add(Box.createRigidArea(new Dimension(0, 10)));
 
-        // --- SỬA NÚT NÀY THÀNH XUẤT EXCEL ---
         btnExport = createButton("Xuất Excel (.csv)", new Color(40, 167, 69));
         btnExport.addActionListener(e -> exportToExcel());
         content.add(btnExport);
@@ -128,6 +130,8 @@ public class ReportManagement extends JFrame {
         panel.add(content);
         return panel;
     }
+
+
 
     // ================= CENTER PREVIEW PANEL =================
     private JPanel createPreviewPanel() {
@@ -238,5 +242,33 @@ public class ReportManagement extends JFrame {
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> new ReportManagement().setVisible(true));
+    }
+
+    private void loadClassList() {
+        try (Connection conn = DatabaseConnection.getConnection()) {
+            if (conn == null) {
+                JOptionPane.showMessageDialog(this,
+                        "Không thể kết nối Database!\nChỉ hiển thị 'Tất cả'",
+                        "Cảnh báo", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            String sql = "SELECT classID, className FROM Classes ORDER BY classID";
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                String classID = rs.getString("classID");
+                cboClass.addItem(classID);
+            }
+
+            rs.close();
+            ps.close();
+
+        } catch (Exception e) {
+            System.err.println("⚠️ Lỗi tải danh sách lớp: " + e.getMessage());
+            // Không hiển thị lỗi cho user, chỉ log ra console
+            e.printStackTrace();
+        }
     }
 }

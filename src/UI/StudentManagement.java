@@ -6,7 +6,6 @@ import ClassManager.data.ClassDatabase;
 import GradeManager.Grade;
 import GradeManager.data.GradeDatabase;
 import StudentManager.Student;
-import StudentManager.data.StudentDatabase;
 import StudentManager.service.AddStudent;
 import StudentManager.service.DeleteStudent;
 import StudentManager.service.EditStudent;
@@ -22,78 +21,385 @@ import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class StudentManagement extends JFrame {
+    private Account currentAccount;
+
+    // --- COLORS & FONTS ---
+    private final Color primaryColor = Color.decode("#1E40AF");
+    private final Color bgColor      = Color.decode("#F3F4F6");
+    private final Color cardColor    = Color.WHITE;
+    private final Color textColor    = Color.decode("#111827");
+    private final Color grayText     = Color.decode("#6B7280");
+    private final Color lineColor    = Color.decode("#E5E7EB");
+
+    private final Font fontBold  = new Font("Segoe UI", Font.BOLD, 13);
+    private final Font fontPlain = new Font("Segoe UI", Font.PLAIN, 13);
+
+    // Components
     private DefaultTableModel tableModel;
     private JTable table;
     private JTextField txtSearch;
     private TableRowSorter<DefaultTableModel> rowSorter;
     private StudentService studentService = new StudentService();
 
-    // --- BIẾN PHÂN QUYỀN ---
-    private Account currentAccount;
-
-    // Input fields
+    // Inputs
     private JTextField txtId, txtName;
-    private JComboBox<String> cboClassInput;
-    private JComboBox<String> cboGender;
-    private JTextField txtRegularScore;
-    private JTextField txtMidtermScore;
-    private JTextField txtFinalScore;
+    private JComboBox<String> cboClassInput, cboGender;
+    private JTextField txtRegularScore, txtMidtermScore, txtFinalScore;
 
-    // Component phân quyền (để khóa nút)
-    private JButton btnAdd, btnUpdate, btnDelete;
+    // Buttons
+    private JButton btnAdd, btnUpdate, btnDelete, btnClear;
 
-    private JComboBox<String> cboFilter;
-    private final Color primaryColor = new Color(70, 70, 70);
-    private final Color secondaryColor = new Color(245, 245, 245);
-
-    // --- SỬA CONSTRUCTOR: NHẬN THAM SỐ ACCOUNT ---
     public StudentManagement(Account account) {
-        this.currentAccount = account; // Lưu tài khoản
+        this.currentAccount = account;
 
-        setTitle("Quản lý điểm học sinh - " + account.getUsername());
-        setSize(1300, 750);
+        setTitle("Quản lý Học sinh");
+        setSize(1350, 750);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
-        setLayout(new BorderLayout(0, 0));
+        setLayout(new BorderLayout());
 
+        // 1. Top Bar
         add(createTopBar(), BorderLayout.NORTH);
-        add(createInputPanel(), BorderLayout.WEST);
-        add(createTablePanel(), BorderLayout.CENTER);
-        add(createButtonPanel(), BorderLayout.SOUTH);
 
-        loadDataFromDatabase();
+        // 2. Main Content
+        JPanel mainPanel = new JPanel(new BorderLayout(20, 0));
+        mainPanel.setBackground(bgColor);
+        mainPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
+
+        mainPanel.add(createLeftPanel(), BorderLayout.WEST);
+        mainPanel.add(createRightPanel(), BorderLayout.CENTER);
+
+        add(mainPanel, BorderLayout.CENTER);
+
+        // Load Data
         loadClassListToInput();
+        loadDataFromDatabase();
 
-        // GỌI HÀM PHÂN QUYỀN SAU KHI GIAO DIỆN ĐÃ TẠO XONG
+        // Phân quyền
         applyPermissions();
     }
 
-    // --- LOGIC PHÂN QUYỀN ---
+    // ================= 1. TOP BAR =================
+    private JPanel createTopBar() {
+        JPanel navbar = new JPanel(new BorderLayout());
+        navbar.setPreferredSize(new Dimension(0, 60));
+        navbar.setBackground(cardColor);
+        navbar.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, lineColor));
+
+        JLabel title = new JLabel("  QUẢN LÝ HỌC SINH");
+        title.setFont(new Font("Segoe UI", Font.BOLD, 20));
+        title.setForeground(primaryColor);
+        title.setBorder(new EmptyBorder(0, 15, 0, 0));
+        navbar.add(title, BorderLayout.WEST);
+
+        JButton btnBack = new JButton("← Dashboard");
+        btnBack.setFont(fontBold);
+        btnBack.setForeground(grayText);
+        btnBack.setBackground(cardColor);
+        btnBack.setBorder(new EmptyBorder(0, 15, 0, 15));
+        btnBack.setFocusPainted(false);
+        btnBack.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnBack.addMouseListener(new MouseAdapter() {
+            public void mouseEntered(MouseEvent e) { btnBack.setForeground(primaryColor); }
+            public void mouseExited(MouseEvent e) { btnBack.setForeground(grayText); }
+        });
+
+        btnBack.addActionListener(e -> {
+            this.dispose();
+            new Dashboard(currentAccount).setVisible(true);
+        });
+
+        navbar.add(btnBack, BorderLayout.EAST);
+        return navbar;
+    }
+
+    // ================= 2. LEFT PANEL (FORM NHẬP LIỆU ĐÃ CHỈNH SỬA) =================
+    private JPanel createLeftPanel() {
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.setBackground(cardColor);
+        panel.setPreferredSize(new Dimension(340, 0));
+        // Viền panel
+        panel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(lineColor),
+                new EmptyBorder(25, 25, 25, 25) // Padding rộng hơn cho thoáng
+        ));
+
+        // --- GROUP 1: THÔNG TIN CƠ BẢN ---
+        addHeader(panel, "THÔNG TIN HỌC SINH");
+
+        panel.add(createLabel("Mã học sinh"));
+        txtId = createTextField();
+        panel.add(txtId);
+        panel.add(Box.createRigidArea(new Dimension(0, 15))); // Khoảng cách field
+
+        panel.add(createLabel("Họ và tên"));
+        txtName = createTextField();
+        panel.add(txtName);
+        panel.add(Box.createRigidArea(new Dimension(0, 15)));
+
+        // Hàng Lớp + Giới tính (Đặt chung 1 dòng)
+        JPanel row = new JPanel(new GridLayout(1, 2, 15, 0));
+        row.setBackground(cardColor);
+        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 55));
+
+        JPanel pClass = new JPanel(new BorderLayout(0,5));
+        pClass.setBackground(cardColor);
+        pClass.add(createLabel("Lớp"), BorderLayout.NORTH);
+        cboClassInput = createComboBox();
+        pClass.add(cboClassInput, BorderLayout.CENTER);
+
+        JPanel pGender = new JPanel(new BorderLayout(0,5));
+        pGender.setBackground(cardColor);
+        pGender.add(createLabel("Giới tính"), BorderLayout.NORTH);
+        cboGender = new JComboBox<>(new String[]{"Nam", "Nữ"});
+        styleComboBox(cboGender);
+        pGender.add(cboGender, BorderLayout.CENTER);
+
+        row.add(pClass);
+        row.add(pGender);
+        panel.add(row);
+
+        panel.add(Box.createRigidArea(new Dimension(0, 30))); // Cách xa nhóm điểm ra
+
+        // --- GROUP 2: ĐIỂM SỐ ---
+        addHeader(panel, "NHẬP ĐIỂM SỐ");
+
+        // Các ô điểm
+        panel.add(createLabel("Thường xuyên (Hệ số 1)"));
+        txtRegularScore = createTextField();
+        panel.add(txtRegularScore);
+        panel.add(Box.createRigidArea(new Dimension(0, 15)));
+
+        panel.add(createLabel("Giữa kỳ (Hệ số 2)"));
+        txtMidtermScore = createTextField();
+        panel.add(txtMidtermScore);
+        panel.add(Box.createRigidArea(new Dimension(0, 15)));
+
+        panel.add(createLabel("Cuối kỳ (Hệ số 3)"));
+        txtFinalScore = createTextField();
+        panel.add(txtFinalScore);
+
+        panel.add(Box.createVerticalGlue()); // Đẩy nút xuống dưới cùng
+
+        // --- BUTTONS ---
+        JPanel btnPanel = new JPanel(new GridLayout(2, 2, 10, 10)); // Grid 2x2 nút to đẹp
+        btnPanel.setBackground(cardColor);
+        btnPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 90));
+
+        btnAdd = createButton("Thêm mới", Color.decode("#10B981"));   // Xanh lá
+        btnUpdate = createButton("Cập nhật", Color.decode("#3B82F6")); // Xanh dương
+        btnDelete = createButton("Xóa HS", Color.decode("#EF4444"));   // Đỏ
+        btnClear = createButton("Làm mới", grayText);                  // Xám
+
+        btnAdd.addActionListener(e -> addStudent());
+        btnUpdate.addActionListener(e -> updateStudent());
+        btnDelete.addActionListener(e -> deleteStudent());
+        btnClear.addActionListener(e -> clearFields());
+
+        btnPanel.add(btnAdd);
+        btnPanel.add(btnUpdate);
+        btnPanel.add(btnDelete);
+        btnPanel.add(btnClear);
+
+        panel.add(btnPanel);
+
+        return panel;
+    }
+
+    // ================= 3. RIGHT PANEL (BẢNG DỮ LIỆU) =================
+    private JPanel createRightPanel() {
+        JPanel panel = new JPanel(new BorderLayout(0, 15));
+        panel.setBackground(bgColor);
+
+        // --- SEARCH BAR (Sửa lại: Dùng chữ "Tìm kiếm" thay cho Icon) ---
+        JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        searchPanel.setBackground(cardColor);
+        searchPanel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(lineColor),
+                new EmptyBorder(8, 15, 8, 15)
+        ));
+
+        JLabel lblSearchText = new JLabel("Tìm kiếm:  ");
+        lblSearchText.setFont(fontBold);
+        lblSearchText.setForeground(textColor);
+
+        txtSearch = new JTextField(25);
+        txtSearch.setFont(fontPlain);
+        txtSearch.setBorder(null); // Bỏ viền input cho liền mạch với panel
+        txtSearch.setPreferredSize(new Dimension(200, 30));
+
+        // Thêm sự kiện tìm kiếm
+        txtSearch.addKeyListener(new KeyAdapter() {
+            public void keyReleased(KeyEvent e) { searchStudent(); }
+        });
+
+        searchPanel.add(lblSearchText);
+        searchPanel.add(txtSearch);
+
+        // Bọc searchPanel vào 1 container để nó không bị giãn hết chiều ngang
+        JPanel topContainer = new JPanel(new BorderLayout());
+        topContainer.setBackground(bgColor);
+        topContainer.add(searchPanel, BorderLayout.WEST);
+
+        panel.add(topContainer, BorderLayout.NORTH);
+
+        // --- TABLE ---
+        String[] columns = {"Mã HS", "Họ và Tên", "Lớp", "GT", "Đ.TX", "Đ.GK", "Đ.CK", "ĐTB", "Xếp loại"};
+
+        tableModel = new DefaultTableModel(columns, 0) {
+            public boolean isCellEditable(int row, int col) { return false; }
+        };
+
+        table = new JTable(tableModel);
+        table.setRowHeight(40);
+        table.setFont(fontPlain);
+        table.setGridColor(lineColor);
+        table.setShowVerticalLines(false);
+        table.setSelectionBackground(new Color(239, 246, 255));
+        table.setSelectionForeground(textColor);
+
+        // Sắp xếp & Tìm kiếm
+        rowSorter = new TableRowSorter<>(tableModel);
+        table.setRowSorter(rowSorter);
+
+        // Căn chỉnh cột
+        table.getColumnModel().getColumn(0).setPreferredWidth(80);
+        table.getColumnModel().getColumn(1).setPreferredWidth(250); // Tên rộng
+        table.getColumnModel().getColumn(2).setPreferredWidth(80);
+        table.getColumnModel().getColumn(3).setPreferredWidth(60);
+
+        // Header Style
+        JTableHeader header = table.getTableHeader();
+        header.setPreferredSize(new Dimension(0, 45));
+        header.setFont(fontBold);
+        header.setBackground(new Color(249, 250, 251));
+        header.setForeground(grayText);
+        header.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, lineColor));
+
+        // Renderers
+        DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
+        centerRenderer.setHorizontalAlignment(JLabel.CENTER);
+
+        DefaultTableCellRenderer leftRenderer = new DefaultTableCellRenderer();
+        leftRenderer.setHorizontalAlignment(JLabel.LEFT);
+        leftRenderer.setBorder(new EmptyBorder(0, 10, 0, 0));
+
+        for (int i = 0; i < table.getColumnCount(); i++) {
+            if (i == 1) table.getColumnModel().getColumn(i).setCellRenderer(leftRenderer);
+            else table.getColumnModel().getColumn(i).setCellRenderer(centerRenderer);
+        }
+
+        // Logic màu điểm số
+        DefaultTableCellRenderer scoreRenderer = new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int col) {
+                Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, col);
+                setHorizontalAlignment(JLabel.CENTER);
+                if (!isSelected) {
+                    try {
+                        double s = Double.parseDouble(value.toString());
+                        if (s < 5.0) c.setForeground(Color.decode("#EF4444")); // Đỏ
+                        else if (s >= 8.0) c.setForeground(Color.decode("#10B981")); // Xanh
+                        else c.setForeground(textColor);
+                    } catch (Exception e) { c.setForeground(textColor); }
+                }
+                return c;
+            }
+        };
+        for(int i=4; i<=7; i++) table.getColumnModel().getColumn(i).setCellRenderer(scoreRenderer);
+
+        table.addMouseListener(new MouseAdapter() {
+            public void mouseClicked(MouseEvent e) {
+                int row = table.getSelectedRow();
+                if (row >= 0) loadDataToForm(table.convertRowIndexToModel(row));
+            }
+        });
+
+        JScrollPane scroll = new JScrollPane(table);
+        scroll.setBorder(BorderFactory.createLineBorder(lineColor));
+        scroll.getViewport().setBackground(Color.WHITE);
+
+        panel.add(scroll, BorderLayout.CENTER);
+        return panel;
+    }
+
+    // ================= HELPER UI METHODS =================
+    private void addHeader(JPanel p, String text) {
+        JLabel lbl = new JLabel(text);
+        lbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        lbl.setForeground(primaryColor);
+        lbl.setAlignmentX(Component.LEFT_ALIGNMENT);
+        p.add(lbl);
+        p.add(Box.createRigidArea(new Dimension(0, 10)));
+    }
+
+    private JLabel createLabel(String text) {
+        JLabel lbl = new JLabel(text);
+        lbl.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        lbl.setForeground(grayText);
+        lbl.setAlignmentX(Component.LEFT_ALIGNMENT);
+        return lbl;
+    }
+
+    private JTextField createTextField() {
+        JTextField tf = new JTextField();
+        tf.setFont(fontPlain);
+        tf.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40)); // Chiều cao to hơn chút
+        tf.setAlignmentX(Component.LEFT_ALIGNMENT);
+        tf.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(lineColor),
+                BorderFactory.createEmptyBorder(5, 10, 5, 10) // Padding trong
+        ));
+        return tf;
+    }
+
+    private JComboBox<String> createComboBox() {
+        JComboBox<String> box = new JComboBox<>();
+        styleComboBox(box);
+        return box;
+    }
+
+    private void styleComboBox(JComboBox box) {
+        box.setFont(fontPlain);
+        box.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
+        box.setAlignmentX(Component.LEFT_ALIGNMENT);
+        box.setBackground(Color.WHITE);
+        ((JComponent) box.getRenderer()).setBorder(new EmptyBorder(5,5,5,5));
+    }
+
+    private JButton createButton(String text, Color color) {
+        JButton btn = new JButton(text);
+        btn.setFont(fontBold);
+        btn.setForeground(Color.WHITE);
+        btn.setBackground(color);
+        btn.setFocusPainted(false);
+        btn.setBorderPainted(false);
+        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btn.addMouseListener(new MouseAdapter() {
+            public void mouseEntered(MouseEvent e) { if(btn.isEnabled()) btn.setBackground(color.darker()); }
+            public void mouseExited(MouseEvent e) { if(btn.isEnabled()) btn.setBackground(color); }
+        });
+        return btn;
+    }
+
+    // ================= LOGIC & PERMISSIONS =================
     private void applyPermissions() {
         if (currentAccount == null) return;
-        String role = currentAccount.getRole();
+        if ("teacher".equals(currentAccount.getRole())) {
+            btnAdd.setEnabled(false);
+            btnDelete.setEnabled(false);
+            btnAdd.setBackground(lineColor);
+            btnDelete.setBackground(lineColor);
 
-        // Nếu là GIÁO VIÊN: Chỉ được sửa điểm, không được thêm/xóa HS
-        if ("teacher".equals(role)) {
-            btnAdd.setEnabled(false);    // Khóa nút Thêm
-            btnDelete.setEnabled(false); // Khóa nút Xóa
-
-            // Khóa các ô thông tin cá nhân (chỉ cho sửa điểm)
             txtId.setEditable(false);
             txtName.setEditable(false);
             cboClassInput.setEnabled(false);
             cboGender.setEnabled(false);
-
-            // Đổi màu nút bị khóa để dễ nhận biết
-            btnAdd.setBackground(Color.GRAY);
-            btnDelete.setBackground(Color.GRAY);
-
-            // Đổi text nút cập nhật cho rõ nghĩa
-            btnUpdate.setText("Cập nhật điểm số");
+            btnUpdate.setText("Lưu điểm");
         }
     }
 
@@ -105,429 +411,78 @@ public class StudentManagement extends JFrame {
         }
     }
 
-    // ================= TOP BAR =================
-    private JPanel createTopBar() {
-        JPanel topBar = new JPanel(new BorderLayout());
-        topBar.setBackground(primaryColor);
-        topBar.setPreferredSize(new Dimension(0, 60));
-        topBar.setBorder(new EmptyBorder(15, 20, 15, 20));
-
-        JLabel title = new JLabel("QUẢN LÝ ĐIỂM HỌC SINH");
-        title.setFont(new Font("Arial", Font.BOLD, 18));
-        title.setForeground(Color.WHITE);
-        topBar.add(title, BorderLayout.WEST);
-
-        JButton btnBack = new JButton("← Quay lại Dashboard");
-        btnBack.setFont(new Font("Arial", Font.BOLD, 12));
-        btnBack.setForeground(Color.WHITE);
-        btnBack.setBackground(new Color(100, 100, 100));
-        btnBack.setOpaque(true);
-        btnBack.setBorderPainted(false);
-        btnBack.setFocusPainted(false);
-        btnBack.setBorder(new EmptyBorder(8, 15, 8, 15));
-        btnBack.setCursor(new Cursor(Cursor.HAND_CURSOR));
-
-        btnBack.addMouseListener(new MouseAdapter() {
-            public void mouseEntered(MouseEvent e) { btnBack.setBackground(new Color(120, 120, 120)); }
-            public void mouseExited(MouseEvent e) { btnBack.setBackground(new Color(100, 100, 100)); }
-        });
-
-        // SỬA NÚT BACK: Truyền lại Account về Dashboard
-        btnBack.addActionListener(e -> {
-            this.dispose();
-            new Dashboard(currentAccount).setVisible(true);
-        });
-
-        topBar.add(btnBack, BorderLayout.EAST);
-        return topBar;
-    }
-
-    // ================= INPUT PANEL =================
-    private JPanel createInputPanel() {
-        JPanel mainPanel = new JPanel(new BorderLayout());
-        mainPanel.setPreferredSize(new Dimension(340, 0));
-        mainPanel.setBackground(Color.WHITE);
-        mainPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, new Color(220, 220, 220)));
-
-        JPanel content = new JPanel();
-        content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
-        content.setBackground(Color.WHITE);
-        content.setBorder(new EmptyBorder(20, 20, 20, 20));
-
-        JLabel lblInfo = new JLabel("1. Thông tin học sinh");
-        lblInfo.setFont(new Font("Arial", Font.BOLD, 14));
-        lblInfo.setForeground(primaryColor);
-        lblInfo.setAlignmentX(Component.LEFT_ALIGNMENT);
-        content.add(lblInfo);
-        content.add(Box.createRigidArea(new Dimension(0, 15)));
-
-        JPanel row1 = new JPanel(new GridLayout(1, 2, 10, 0));
-        row1.setBackground(Color.WHITE);
-        row1.setAlignmentX(Component.LEFT_ALIGNMENT);
-        row1.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
-
-        txtId = createTextField();
-        cboGender = new JComboBox<>(new String[]{"Nam", "Nữ"});
-        cboGender.setFont(new Font("Arial", Font.PLAIN, 13));
-
-        row1.add(createFieldPanel("Mã HS:", txtId));
-        row1.add(createFieldPanel("Giới tính:", cboGender));
-        content.add(row1);
-        content.add(Box.createRigidArea(new Dimension(0, 10)));
-
-        content.add(createFieldPanel("Họ và tên:", txtName = createTextField()));
-        content.add(Box.createRigidArea(new Dimension(0, 10)));
-
-        cboClassInput = new JComboBox<>();
-        cboClassInput.setFont(new Font("Arial", Font.PLAIN, 13));
-        content.add(createFieldPanel("Lớp:", cboClassInput));
-
-        content.add(Box.createRigidArea(new Dimension(0, 25)));
-        JSeparator sep = new JSeparator();
-        sep.setMaximumSize(new Dimension(Integer.MAX_VALUE, 1));
-        content.add(sep);
-        content.add(Box.createRigidArea(new Dimension(0, 25)));
-
-        JLabel lblScore = new JLabel("2. Nhập điểm chi tiết");
-        lblScore.setFont(new Font("Arial", Font.BOLD, 14));
-        lblScore.setForeground(primaryColor);
-        lblScore.setAlignmentX(Component.LEFT_ALIGNMENT);
-        content.add(lblScore);
-        content.add(Box.createRigidArea(new Dimension(0, 15)));
-
-        txtRegularScore = createTextField();
-        txtMidtermScore = createTextField();
-        txtFinalScore = createTextField();
-
-        content.add(createFieldPanel("Điểm thường xuyên (Hệ số 1):", txtRegularScore));
-        content.add(Box.createRigidArea(new Dimension(0, 10)));
-        content.add(createFieldPanel("Điểm giữa kì (Hệ số 2):", txtMidtermScore));
-        content.add(Box.createRigidArea(new Dimension(0, 10)));
-        content.add(createFieldPanel("Điểm cuối kì (Hệ số 3):", txtFinalScore));
-        content.add(Box.createRigidArea(new Dimension(0, 10)));
-
-        JScrollPane scrollPane = new JScrollPane(content);
-        scrollPane.setBorder(null);
-        mainPanel.add(scrollPane, BorderLayout.CENTER);
-
-        return mainPanel;
-    }
-
-    private JPanel createFieldPanel(String labelText, JComponent component) {
-        JPanel p = new JPanel(new BorderLayout(0, 5));
-        p.setBackground(Color.WHITE);
-        JLabel lbl = new JLabel(labelText);
-        lbl.setFont(new Font("Arial", Font.PLAIN, 12));
-        p.add(lbl, BorderLayout.NORTH);
-        p.add(component, BorderLayout.CENTER);
-        return p;
-    }
-
-    private JTextField createTextField() {
-        JTextField tf = new JTextField();
-        tf.setFont(new Font("Arial", Font.PLAIN, 13));
-        return tf;
-    }
-
-    // ================= TABLE PANEL =================
-    private JPanel createTablePanel() {
-        JPanel panel = new JPanel(new BorderLayout(15, 15));
-        panel.setBackground(secondaryColor);
-        panel.setBorder(new EmptyBorder(20, 20, 20, 20));
-
-        JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
-        searchPanel.setBackground(secondaryColor);
-        searchPanel.add(new JLabel("Tìm kiếm:"));
-
-        txtSearch = new JTextField(20);
-        txtSearch.addKeyListener(new KeyAdapter() {
-            public void keyReleased(KeyEvent e) { searchStudent(); }
-        });
-        searchPanel.add(txtSearch);
-
-        searchPanel.add(new JLabel("  Lọc lớp:"));
-
-        cboFilter = new JComboBox<>();
-        cboFilter.addItem("Tất cả");
-
-        cboFilter.addActionListener(e -> {
-            if (cboFilter.getSelectedItem() == null) return;
-            String selected = cboFilter.getSelectedItem().toString();
-            if (selected.equals("Tất cả")) rowSorter.setRowFilter(null);
-            else rowSorter.setRowFilter(RowFilter.regexFilter(selected, 2));
-        });
-        searchPanel.add(cboFilter);
-
-        panel.add(searchPanel, BorderLayout.NORTH);
-
-        String[] columns = {
-                "Mã HS", "Họ tên", "Lớp", "GT",
-                "Đ.Thường xuyên", "Đ.Giữa kì", "Đ.Cuối kì",
-                "ĐTB", "Xếp loại"
-        };
-
-        tableModel = new DefaultTableModel(columns, 0) {
-            public boolean isCellEditable(int row, int col) { return false; }
-        };
-
-        table = new JTable(tableModel);
-        table.setRowHeight(30);
-        table.setGridColor(new Color(220, 220, 220));
-        rowSorter = new TableRowSorter<>(tableModel);
-        table.setRowSorter(rowSorter);
-
-        JTableHeader header = table.getTableHeader();
-        header.setPreferredSize(new Dimension(0, 35));
-        DefaultTableCellRenderer headerRenderer = new DefaultTableCellRenderer();
-        headerRenderer.setBackground(primaryColor);
-        headerRenderer.setForeground(Color.WHITE);
-        headerRenderer.setFont(new Font("Arial", Font.BOLD, 12));
-        headerRenderer.setHorizontalAlignment(JLabel.CENTER);
-        for (int i = 0; i < table.getColumnCount(); i++) table.getColumnModel().getColumn(i).setHeaderRenderer(headerRenderer);
-
-        DefaultTableCellRenderer cellRenderer = new DefaultTableCellRenderer() {
-            @Override
-            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-                Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                setHorizontalAlignment(JLabel.CENTER);
-
-                if (!isSelected) {
-                    try {
-                        String text = value.toString();
-                        if (column >= 4 && column <= 7) {
-                            double score = Double.parseDouble(text);
-                            if (score < 5.0) {
-                                c.setForeground(Color.RED);
-                                c.setFont(new Font("Arial", Font.BOLD, 12));
-                            } else if (score >= 8.0) {
-                                c.setForeground(new Color(0, 100, 0));
-                                c.setFont(new Font("Arial", Font.BOLD, 12));
-                            } else {
-                                c.setForeground(Color.BLACK);
-                                c.setFont(new Font("Arial", Font.PLAIN, 12));
-                            }
-                        } else if (column == 8) {
-                            if (text.equals("Giỏi")) c.setForeground(new Color(0, 100, 0));
-                            else if (text.equals("Yếu")) c.setForeground(Color.RED);
-                            else c.setForeground(Color.BLACK);
-                        } else {
-                            c.setForeground(Color.BLACK);
-                        }
-                    } catch (Exception e) { c.setForeground(Color.BLACK); }
-                }
-                return c;
-            }
-        };
-        for (int i = 0; i < table.getColumnCount(); i++) table.getColumnModel().getColumn(i).setCellRenderer(cellRenderer);
-
-        table.addMouseListener(new MouseAdapter() {
-            public void mouseClicked(MouseEvent e) {
-                int row = table.getSelectedRow();
-                if (row >= 0) {
-                    loadDataToForm(table.convertRowIndexToModel(row));
-                }
-            }
-        });
-
-        JScrollPane scroll = new JScrollPane(table);
-        scroll.getViewport().setBackground(Color.WHITE);
-        panel.add(scroll, BorderLayout.CENTER);
-
-        return panel;
-    }
-
-    // ================= BUTTON PANEL =================
-    private JPanel createButtonPanel() {
-        JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 15));
-        panel.setBackground(Color.WHITE);
-        panel.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, new Color(220, 220, 220)));
-
-        // Gán các nút vào biến toàn cục để hàm applyPermissions() sử dụng
-        btnAdd = createButton("Thêm", new Color(40, 167, 69));
-        btnUpdate = createButton("Cập nhật", new Color(0, 123, 255));
-        btnDelete = createButton("Xóa", new Color(220, 53, 69));
-        JButton btnClear = createButton("Làm mới", new Color(108, 117, 125));
-
-        btnAdd.addActionListener(e -> addStudent());
-        btnUpdate.addActionListener(e -> updateStudent());
-        btnDelete.addActionListener(e -> deleteStudent());
-        btnClear.addActionListener(e -> clearFields());
-
-        panel.add(btnAdd);
-        panel.add(btnUpdate);
-        panel.add(btnDelete);
-        panel.add(btnClear);
-        return panel;
-    }
-
-    private JButton createButton(String text, Color bg) {
-        JButton btn = new JButton(text);
-        btn.setFont(new Font("Arial", Font.BOLD, 13));
-        btn.setForeground(Color.WHITE);
-        btn.setBackground(bg);
-        btn.setOpaque(true);
-        btn.setBorderPainted(false);
-        btn.setFocusPainted(false);
-        btn.setBorder(new EmptyBorder(10, 25, 10, 25));
-        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btn.addMouseListener(new MouseAdapter() {
-            public void mouseEntered(MouseEvent e) {
-                if(btn.isEnabled()) btn.setBackground(bg.darker());
-            }
-            public void mouseExited(MouseEvent e) {
-                if(btn.isEnabled()) btn.setBackground(bg);
-            }
-        });
-        return btn;
-    }
-
-    // ================= BUSINESS LOGIC =================
-    private void updateClassFilter() {
-        String currentSelection = (cboFilter.getSelectedItem() != null) ? cboFilter.getSelectedItem().toString() : "Tất cả";
-        cboFilter.removeAllItems();
-        cboFilter.addItem("Tất cả");
-
-        List<String> classes = studentService.getUniqueClassList();
-
-        for (String className : classes) {
-            cboFilter.addItem(className);
-        }
-
-        if (currentSelection.equals("Tất cả") || classes.contains(currentSelection)) {
-            cboFilter.setSelectedItem(currentSelection);
-        }
-    }
-
     private void loadDataFromDatabase() {
         tableModel.setRowCount(0);
-
-        // 1. TẢI TÊN LỚP
         Map<String, String> classMap = new HashMap<>();
-        for (Classes c : ClassDatabase.getClassDB().getAllClasses()) {
-            classMap.put(c.getClassID(), c.getClassName());
-        }
+        for (Classes c : ClassDatabase.getClassDB().getAllClasses()) classMap.put(c.getClassID(), c.getClassName());
 
-        // 2. TẢI ĐIỂM
         HashMap<String, Grade> gradeMap = GradeDatabase.getGradeDB().getAllGradesAsMap();
-
-        ArrayList<Student> list = studentService.getAllStudents();
+        ArrayList<Student> list = new StudentService().getAllStudents();
 
         for (Student s : list) {
-            double reg = 0, mid = 0, fin = 0;
+            double r=0, m=0, f=0;
             Grade g = gradeMap.get(s.getStudentID());
-            if (g != null) {
-                reg = g.getRegularScore();
-                mid = g.getMidtermScore();
-                fin = g.getFinalScore();
-            }
+            if (g != null) { r=g.getRegularScore(); m=g.getMidtermScore(); f=g.getFinalScore(); }
 
-            double avg = studentService.calculateAvg(reg, mid, fin);
-            String rank = studentService.classify(avg);
-
-            String classID = s.getStudentClass();
-            String classNameDisplay = classMap.getOrDefault(classID, classID);
+            double avg = studentService.calculateAvg(r, m, f);
+            String className = classMap.getOrDefault(s.getStudentClass(), s.getStudentClass());
 
             tableModel.addRow(new Object[]{
-                    s.getStudentID(),
-                    s.getStudentName(),
-                    classNameDisplay,
-                    s.getGender(),
-                    reg, mid, fin, String.format("%.2f", avg), rank
+                    s.getStudentID(), s.getStudentName(), className, s.getGender(),
+                    r, m, f, String.format("%.2f", avg), studentService.classify(avg)
             });
         }
-        updateClassFilter();
     }
 
+    // --- CRUD ---
     private void addStudent() {
         if (!validateInput()) return;
         try {
-            String id = txtId.getText().trim();
-            String name = txtName.getText().trim();
-            String gender = cboGender.getSelectedItem().toString();
-
-            String selectedClass = cboClassInput.getSelectedItem().toString();
-            String classID = selectedClass.split(" - ")[0].trim();
-
-            AddStudent service = new AddStudent();
-            service.add(id, name, classID, gender);
-
-            double reg = parseScore(txtRegularScore);
-            double mid = parseScore(txtMidtermScore);
-            double fin = parseScore(txtFinalScore);
-
-            GradeManager.service.AddGrade gradeService = new GradeManager.service.AddGrade();
-            gradeService.addScore(id, reg, mid, fin);
+            String cid = cboClassInput.getSelectedItem().toString().split(" - ")[0].trim();
+            new AddStudent().add(txtId.getText().trim(), txtName.getText().trim(), cid, cboGender.getSelectedItem().toString());
+            new GradeManager.service.AddGrade().addScore(txtId.getText().trim(), parseScore(txtRegularScore), parseScore(txtMidtermScore), parseScore(txtFinalScore));
 
             loadDataFromDatabase();
             clearFields();
             JOptionPane.showMessageDialog(this, "Thêm thành công!");
-
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Lỗi: " + e.getMessage());
-        }
+        } catch (Exception e) { JOptionPane.showMessageDialog(this, "Lỗi: " + e.getMessage()); }
     }
 
     private void updateStudent() {
         int row = table.getSelectedRow();
         if (row < 0) { JOptionPane.showMessageDialog(this, "Chọn dòng để sửa!"); return; }
-        if (!validateInput()) return;
-
         try {
-            int modelRow = table.convertRowIndexToModel(row);
-            String oldID = tableModel.getValueAt(modelRow, 0).toString();
+            String oldID = tableModel.getValueAt(table.convertRowIndexToModel(row), 0).toString();
+            String cid = cboClassInput.getSelectedItem().toString().split(" - ")[0].trim();
 
-            String newId = txtId.getText().trim();
-            String name = txtName.getText().trim();
-            String gender = cboGender.getSelectedItem().toString();
-
-            String selectedClass = cboClassInput.getSelectedItem().toString();
-            String classID = selectedClass.split(" - ")[0].trim();
-
-            EditStudent service = new EditStudent();
-            service.edit(oldID, newId, name, classID, gender);
-
-            double reg = parseScore(txtRegularScore);
-            double mid = parseScore(txtMidtermScore);
-            double fin = parseScore(txtFinalScore);
-
-            GradeManager.service.EditGrade gradeEditService = new GradeManager.service.EditGrade();
-            gradeEditService.editScore(newId, reg, mid, fin);
+            if (!"teacher".equals(currentAccount.getRole())) {
+                new EditStudent().edit(oldID, txtId.getText().trim(), txtName.getText().trim(), cid, cboGender.getSelectedItem().toString());
+            }
+            new GradeManager.service.EditGrade().editScore(txtId.getText().trim(), parseScore(txtRegularScore), parseScore(txtMidtermScore), parseScore(txtFinalScore));
 
             loadDataFromDatabase();
             clearFields();
             JOptionPane.showMessageDialog(this, "Cập nhật thành công!");
-
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Lỗi: " + e.getMessage());
-        }
+        } catch (Exception e) { JOptionPane.showMessageDialog(this, "Lỗi: " + e.getMessage()); }
     }
 
     private void deleteStudent() {
         int row = table.getSelectedRow();
         if (row < 0) { JOptionPane.showMessageDialog(this, "Chọn dòng để xóa!"); return; }
-
-        if (JOptionPane.showConfirmDialog(this, "Xóa học sinh này và toàn bộ điểm?", "Xác nhận", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
+        if (JOptionPane.showConfirmDialog(this, "Xóa học sinh này?", "Xác nhận", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
             try {
-                int modelRow = table.convertRowIndexToModel(row);
-                String id = tableModel.getValueAt(modelRow, 0).toString();
-
-                DeleteStudent service = new DeleteStudent();
-                service.delete(id);
-                try { GradeDatabase.getGradeDB().deleteGrade(id); } catch (Exception ignored) {}
-
+                String id = tableModel.getValueAt(table.convertRowIndexToModel(row), 0).toString();
+                new DeleteStudent().delete(id);
+                try { GradeDatabase.getGradeDB().deleteGrade(id); } catch(Exception ignored){}
                 loadDataFromDatabase();
                 clearFields();
-                JOptionPane.showMessageDialog(this, "Đã xóa thành công!");
-
-            } catch (Exception e) {
-                JOptionPane.showMessageDialog(this, "Lỗi: " + e.getMessage());
-            }
+                JOptionPane.showMessageDialog(this, "Đã xóa!");
+            } catch (Exception e) { JOptionPane.showMessageDialog(this, "Lỗi: " + e.getMessage()); }
         }
     }
 
     private void clearFields() {
         txtId.setText(""); txtName.setText("");
-        if (cboClassInput.getItemCount() > 0) cboClassInput.setSelectedIndex(0);
         txtRegularScore.setText(""); txtMidtermScore.setText(""); txtFinalScore.setText("");
         table.clearSelection();
     }
@@ -535,42 +490,25 @@ public class StudentManagement extends JFrame {
     private void loadDataToForm(int row) {
         txtId.setText(tableModel.getValueAt(row, 0).toString());
         txtName.setText(tableModel.getValueAt(row, 1).toString());
-
-        String classIDInTable = tableModel.getValueAt(row, 2).toString();
-        for (int i = 0; i < cboClassInput.getItemCount(); i++) {
-            String item = cboClassInput.getItemAt(i);
-            if (item.startsWith(classIDInTable + " -") || item.equals(classIDInTable)) {
+        String cid = tableModel.getValueAt(row, 2).toString();
+        for (int i=0; i<cboClassInput.getItemCount(); i++) {
+            if (cboClassInput.getItemAt(i).contains(cid)) {
                 cboClassInput.setSelectedIndex(i);
                 break;
             }
         }
-
-        String gender = tableModel.getValueAt(row, 3).toString();
-        if (gender.equalsIgnoreCase("Nam") || gender.equalsIgnoreCase("Nữ")) {
-            cboGender.setSelectedItem(gender);
-        } else {
-            cboGender.setSelectedIndex(0);
-        }
-
+        cboGender.setSelectedItem(tableModel.getValueAt(row, 3).toString());
         txtRegularScore.setText(tableModel.getValueAt(row, 4).toString());
         txtMidtermScore.setText(tableModel.getValueAt(row, 5).toString());
         txtFinalScore.setText(tableModel.getValueAt(row, 6).toString());
     }
 
-    private double parseScore(JTextField tf) throws NumberFormatException {
-        String text = tf.getText().trim();
-        if (text.isEmpty()) return 0;
-        double s = Double.parseDouble(text);
-        if (s < 0 || s > 10) throw new NumberFormatException("Điểm phải từ 0-10");
-        return s;
+    private double parseScore(JTextField tf) {
+        try { return Double.parseDouble(tf.getText().trim()); } catch (Exception e) { return 0; }
     }
 
-
     private boolean validateInput() {
-        if (txtId.getText().isEmpty() || txtName.getText().isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Vui lòng nhập Mã HS và Tên!");
-            return false;
-        }
+        if (txtId.getText().isEmpty()) { JOptionPane.showMessageDialog(this, "Nhập Mã HS!"); return false; }
         return true;
     }
 
@@ -580,9 +518,8 @@ public class StudentManagement extends JFrame {
         else rowSorter.setRowFilter(RowFilter.regexFilter("(?i)" + text));
     }
 
-    // Main này chỉ để test UI, thực tế sẽ gọi từ Dashboard
     public static void main(String[] args) {
-        Account testAcc = new Account("admin", "123", "", "admin");
-        SwingUtilities.invokeLater(() -> new StudentManagement(testAcc).setVisible(true));
+        Account mock = new Account("admin", "", "", "admin");
+        SwingUtilities.invokeLater(() -> new StudentManagement(mock).setVisible(true));
     }
 }

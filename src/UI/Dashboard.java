@@ -9,6 +9,7 @@ import StudentManager.Student;
 import StudentManager.data.StudentDatabase;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
@@ -18,16 +19,19 @@ public class Dashboard extends JFrame {
     private JPanel mainPanel;
     private Account currentAccount;
 
-    // Colors
+    // --- COLORS & FONTS ---
     private final Color primaryColor = Color.decode("#1E40AF");
     private final Color bgColor      = Color.decode("#F3F4F6");
     private final Color cardColor    = Color.WHITE;
     private final Color textColor    = Color.decode("#111827");
     private final Color grayText     = Color.decode("#6B7280");
+    private final Color lineColor    = Color.decode("#E5E7EB");
+    private final Color hoverColor   = Color.decode("#EFF6FF"); // Xanh rất nhạt khi hover menu
 
     private final Font fontTitle = new Font("Segoe UI", Font.BOLD, 24);
     private final Font fontHead  = new Font("Segoe UI", Font.BOLD, 16);
     private final Font fontText  = new Font("Segoe UI", Font.PLAIN, 14);
+    private final Font fontMenu  = new Font("Segoe UI", Font.BOLD, 14);
 
     // DB
     private final StudentDatabase studentDB = StudentDatabase.getStudentDB();
@@ -37,7 +41,7 @@ public class Dashboard extends JFrame {
     public Dashboard(Account account) {
         this.currentAccount = account;
         setTitle("Hệ thống Quản lý - " + getRoleName());
-        setSize(1280, 800);
+        setSize(1400, 850);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setLayout(new BorderLayout());
@@ -55,69 +59,81 @@ public class Dashboard extends JFrame {
         return "Học sinh";
     }
 
-    // --- SIDEBAR ---
+    // ================= SIDEBAR (MENU TRÁI - KHÔNG ICON) =================
     private JPanel createSidebar() {
         JPanel sidebar = new JPanel(null);
-        sidebar.setPreferredSize(new Dimension(260, 0));
+        sidebar.setPreferredSize(new Dimension(280, 0)); // Rộng hơn chút
         sidebar.setBackground(cardColor);
-        sidebar.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, new Color(229, 231, 235)));
+        sidebar.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, lineColor));
 
-        JLabel lblBrand = new JLabel("<html><span style='color:#1E40AF'>SCHOOL</span> ADMIN</html>");
-        lblBrand.setFont(new Font("Segoe UI", Font.BOLD, 22));
-        lblBrand.setBounds(30, 30, 200, 30);
+        // 1. BRAND
+        JLabel lblBrand = new JLabel("SCHOOL ADMIN");
+        lblBrand.setFont(new Font("Segoe UI", Font.BOLD, 24));
+        lblBrand.setForeground(primaryColor);
+        lblBrand.setBounds(30, 30, 220, 40);
         sidebar.add(lblBrand);
 
+        // 2. USER PROFILE (Gọn gàng hơn)
         JPanel userPanel = new JPanel(null);
-        userPanel.setBackground(new Color(239, 246, 255));
-        userPanel.setBounds(20, 80, 220, 70);
-        userPanel.setBorder(new LineBorder(new Color(219, 234, 254), 1, true));
+        userPanel.setBackground(bgColor);
+        userPanel.setBounds(20, 90, 240, 70);
+        userPanel.setBorder(new LineBorder(lineColor, 1, true));
 
-        JLabel lblAvatar = new JLabel("👤");
-        lblAvatar.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 28));
-        lblAvatar.setBounds(15, 10, 40, 50);
+        // Avatar circle giả lập bằng text
+        JLabel lblAvatar = new JLabel(currentAccount.getUsername().substring(0, 1).toUpperCase());
+        lblAvatar.setFont(new Font("Segoe UI", Font.BOLD, 24));
+        lblAvatar.setForeground(Color.WHITE);
+        lblAvatar.setHorizontalAlignment(SwingConstants.CENTER);
+        lblAvatar.setOpaque(true);
+        lblAvatar.setBackground(primaryColor);
+        lblAvatar.setBounds(15, 15, 40, 40);
+        // Bo tròn avatar (Hack nhỏ: vẽ đè lên background)
+
         userPanel.add(lblAvatar);
 
         JLabel lblUser = new JLabel(currentAccount.getUsername());
         lblUser.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        lblUser.setForeground(primaryColor);
-        lblUser.setBounds(60, 15, 150, 20);
+        lblUser.setForeground(textColor);
+        lblUser.setBounds(70, 15, 160, 20);
         userPanel.add(lblUser);
 
         JLabel lblRole = new JLabel(getRoleName());
         lblRole.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         lblRole.setForeground(grayText);
-        lblRole.setBounds(60, 35, 150, 20);
+        lblRole.setBounds(70, 35, 160, 20);
         userPanel.add(lblRole);
         sidebar.add(userPanel);
 
-        int y = 180;
+        // 3. MENU ITEMS (CHỮ THÔI)
+        int y = 200;
         String role = currentAccount.getRole();
 
-        sidebar.add(createMenuBtn("Trang chủ", "🏠", y, true));
-        y += 55;
+        sidebar.add(createMenuBtn("Trang chủ", y, true));
+        y += 50;
 
         if ("admin".equals(role) || "teacher".equals(role)) {
-            sidebar.add(createMenuBtn("Quản lý học sinh", "👨‍🎓", y, false));
-            y += 55;
+            sidebar.add(createMenuBtn("Quản lý học sinh", y, false));
+            y += 50;
         }
 
         if ("admin".equals(role)) {
-            sidebar.add(createMenuBtn("Lớp học", "🏫", y, false));
-            y += 55;
-            sidebar.add(createMenuBtn("Báo cáo & Thống kê", "📊", y, false));
-            y += 55;
+            sidebar.add(createMenuBtn("Lớp học", y, false));
+            y += 50;
+            sidebar.add(createMenuBtn("Báo cáo & Thống kê", y, false));
+            y += 50;
         }
 
         if ("student".equals(role)) {
-            sidebar.add(createMenuBtn("Xem điểm cá nhân", "📝", y, false));
-            y += 55;
+            sidebar.add(createMenuBtn("Xem điểm cá nhân", y, false));
+            y += 50;
         }
 
+        // 4. LOGOUT
         JButton btnLogout = new JButton("Đăng xuất");
-        btnLogout.setBounds(20, 700, 220, 40);
-        btnLogout.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        btnLogout.setBounds(20, 750, 240, 45);
+        btnLogout.setFont(fontMenu);
         btnLogout.setForeground(Color.WHITE);
-        btnLogout.setBackground(new Color(220, 38, 38));
+        btnLogout.setBackground(Color.decode("#EF4444")); // Đỏ
         btnLogout.setBorderPainted(false);
         btnLogout.setFocusPainted(false);
         btnLogout.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -127,25 +143,32 @@ public class Dashboard extends JFrame {
         return sidebar;
     }
 
-    private JButton createMenuBtn(String text, String icon, int y, boolean isActive) {
-        JButton btn = new JButton("  " + icon + "   " + text);
-        btn.setBounds(20, y, 220, 45);
-        btn.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+    private JButton createMenuBtn(String text, int y, boolean isActive) {
+        JButton btn = new JButton(text);
+        btn.setBounds(20, y, 240, 45);
+        btn.setFont(fontMenu);
         btn.setHorizontalAlignment(SwingConstants.LEFT);
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
         btn.setFocusPainted(false);
         btn.setBorderPainted(false);
+        // Padding text
+        btn.setBorder(new EmptyBorder(0, 20, 0, 0));
 
         if (isActive) {
             btn.setBackground(primaryColor);
             btn.setForeground(Color.WHITE);
-            btn.setFont(new Font("Segoe UI", Font.BOLD, 14));
         } else {
             btn.setBackground(cardColor);
-            btn.setForeground(textColor);
+            btn.setForeground(grayText);
             btn.addMouseListener(new MouseAdapter() {
-                public void mouseEntered(MouseEvent e) { btn.setBackground(new Color(243, 244, 246)); }
-                public void mouseExited(MouseEvent e) { btn.setBackground(cardColor); }
+                public void mouseEntered(MouseEvent e) {
+                    btn.setBackground(hoverColor);
+                    btn.setForeground(primaryColor);
+                }
+                public void mouseExited(MouseEvent e) {
+                    btn.setBackground(cardColor);
+                    btn.setForeground(grayText);
+                }
             });
         }
         btn.addActionListener(e -> handleMenuClick(text));
@@ -160,90 +183,87 @@ public class Dashboard extends JFrame {
         JLabel lblTitle = new JLabel("Tổng quan hệ thống");
         lblTitle.setFont(fontTitle);
         lblTitle.setForeground(textColor);
-        lblTitle.setBounds(40, 30, 400, 40);
+        lblTitle.setBounds(40, 40, 400, 40);
         content.add(lblTitle);
 
         int totalStudents = studentDB.getAllStudents().size();
         int totalClasses = classDB.getAllClasses().size();
 
-        content.add(createCard("Tổng học sinh", String.valueOf(totalStudents), 40, 90));
-        content.add(createCard("Tổng số lớp", String.valueOf(totalClasses), 300, 90));
-        content.add(createCard("Học kỳ", "HK1 - 2025", 560, 90));
+        // Cards (Top row)
+        content.add(createCard("Tổng học sinh", String.valueOf(totalStudents), 40, 100));
+        content.add(createCard("Tổng số lớp", String.valueOf(totalClasses), 300, 100));
+        content.add(createCard("Học kỳ hiện tại", "HK1 - 2025", 560, 100));
 
+        // Info Panels (Bottom row)
         DashboardService service = new DashboardService();
-        content.add(createListCard("Phân loại học lực", service.calculatePerformanceStats(), 40, 240, 400));
-        content.add(createListCard("Lớp học tiêu biểu (Top ĐTB)", service.calculateTopClasses(), 480, 240, 480));
+        content.add(createListCard("Phân loại học lực", service.calculatePerformanceStats(), 40, 260, 400));
+        content.add(createListCard("Lớp học tiêu biểu (Top ĐTB)", service.calculateTopClasses(), 480, 260, 500));
 
         return content;
     }
 
     private JPanel createCard(String title, String value, int x, int y) {
         JPanel card = new JPanel(null);
-        card.setBounds(x, y, 240, 120);
+        card.setBounds(x, y, 240, 130);
         card.setBackground(cardColor);
-        card.setBorder(BorderFactory.createMatteBorder(1, 1, 3, 1, new Color(229, 231, 235)));
+        card.setBorder(BorderFactory.createMatteBorder(1, 1, 4, 1, lineColor)); // Viền dưới dày hơn giả bóng
 
         JLabel lblVal = new JLabel(value);
-        lblVal.setFont(new Font("Segoe UI", Font.BOLD, 32));
+        lblVal.setFont(new Font("Segoe UI", Font.BOLD, 36));
         lblVal.setForeground(primaryColor);
-        lblVal.setBounds(20, 20, 200, 40);
+        lblVal.setBounds(25, 25, 200, 45);
         card.add(lblVal);
 
         JLabel lblTitle = new JLabel(title);
         lblTitle.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         lblTitle.setForeground(grayText);
-        lblTitle.setBounds(20, 70, 200, 20);
+        lblTitle.setBounds(25, 80, 200, 20);
         card.add(lblTitle);
         return card;
     }
 
     private JPanel createListCard(String title, String[] items, int x, int y, int width) {
         JPanel card = new JPanel(null);
-        card.setBounds(x, y, width, 400);
+        card.setBounds(x, y, width, 450);
         card.setBackground(cardColor);
-        card.setBorder(BorderFactory.createMatteBorder(1, 1, 3, 1, new Color(229, 231, 235)));
+        card.setBorder(BorderFactory.createLineBorder(lineColor));
 
         JLabel lblHeader = new JLabel(title);
         lblHeader.setFont(fontHead);
         lblHeader.setForeground(textColor);
-        lblHeader.setBounds(25, 20, 300, 30);
+        lblHeader.setBounds(30, 25, 300, 30);
 
         JSeparator sep = new JSeparator();
-        sep.setBounds(25, 55, width - 50, 1);
-        sep.setForeground(new Color(229, 231, 235));
+        sep.setBounds(30, 65, width - 60, 1);
+        sep.setForeground(lineColor);
         card.add(lblHeader);
         card.add(sep);
 
         if (items != null) {
-            int itemY = 70;
+            int itemY = 85;
             for (String item : items) {
-                JLabel lblItem = new JLabel("•  " + item);
+                JLabel lblItem = new JLabel(item);
                 lblItem.setFont(fontText);
-                lblItem.setForeground(new Color(55, 65, 81));
-                lblItem.setBounds(25, itemY, width - 50, 25);
+                lblItem.setForeground(textColor);
+                lblItem.setBounds(30, itemY, width - 60, 25);
                 card.add(lblItem);
-                itemY += 35;
+                itemY += 40;
             }
         }
         return card;
     }
 
-    // --- LOGIC ---
     private void handleMenuClick(String menuName) {
         if ("Quản lý học sinh".equals(menuName)) {
             this.dispose();
             new StudentManagement(currentAccount).setVisible(true);
-        }
-        else if ("Lớp học".equals(menuName)) {
+        } else if ("Lớp học".equals(menuName)) {
             this.dispose();
             new ClassManagement(currentAccount).setVisible(true);
-        }
-        else if ("Báo cáo & Thống kê".equals(menuName)) {
+        } else if ("Báo cáo & Thống kê".equals(menuName)) {
             this.dispose();
-            // ✅ ĐÃ SỬA: Truyền Account vào Statistics
             new Statistics(currentAccount).setVisible(true);
-        }
-        else if ("Xem điểm cá nhân".equals(menuName)) {
+        } else if ("Xem điểm cá nhân".equals(menuName)) {
             showStudentPersonalScore();
         }
     }
@@ -262,14 +282,13 @@ public class Dashboard extends JFrame {
             return;
         }
         String msg = "Học sinh: " + s.getStudentName() + "\nLớp: " + s.getStudentClass() + "\n----------------\n";
-        if (g != null) {
-            msg += "Điểm TB: " + String.format("%.2f", g.getAverage());
-        } else msg += "Chưa có điểm.";
-        JOptionPane.showMessageDialog(this, msg, "Bảng điểm", JOptionPane.INFORMATION_MESSAGE);
+        if (g != null) msg += "Điểm TB: " + String.format("%.2f", g.getAverage());
+        else msg += "Chưa có điểm.";
+        JOptionPane.showMessageDialog(this, msg, "Bảng điểm cá nhân", JOptionPane.INFORMATION_MESSAGE);
     }
 
     private void logout() {
-        if (JOptionPane.showConfirmDialog(this, "Đăng xuất?", "Xác nhận", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
+        if (JOptionPane.showConfirmDialog(this, "Bạn muốn đăng xuất?", "Xác nhận", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
             this.dispose();
             new Login().setVisible(true);
         }

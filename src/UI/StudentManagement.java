@@ -1,8 +1,5 @@
 package UI;
 
-
-import java.util.HashMap;
-import java.util.Map;
 import ClassManager.Classes;
 import ClassManager.data.ClassDatabase;
 import GradeManager.Grade;
@@ -380,44 +377,24 @@ public class StudentManagement extends JFrame {
 
     private void loadDataFromDatabase() {
         tableModel.setRowCount(0);
-
-        // 1. TẢI TOÀN BỘ DỮ LIỆU CẦN THIẾT (Chỉ mất 3 lần gọi mạng)
-        // Lấy danh sách lớp (để tra tên lớp)
-        Map<String, String> classMap = new HashMap<>();
-        for (Classes c : ClassDatabase.getClassDB().getAllClasses()) {
-            classMap.put(c.getClassID(), c.getClassName());
-        }
-
-        // Lấy toàn bộ bảng điểm (để tra điểm) -> KEY CHÍNH GIÚP TĂNG TỐC
-        HashMap<String, Grade> gradeMap = GradeDatabase.getGradeDB().getAllGradesAsMap();
-
-        // Lấy danh sách học sinh
         ArrayList<Student> list = studentService.getAllStudents();
 
-        // 2. KHỚP DỮ LIỆU TRONG BỘ NHỚ (RAM)
         for (Student s : list) {
             double reg = 0, mid = 0, fin = 0;
-
-            // Thay vì gọi DB, ta lấy từ Map đã tải sẵn -> Tốc độ tức thì
-            Grade g = gradeMap.get(s.getStudentID());
-            if (g != null) {
-                reg = g.getRegularScore();
-                mid = g.getMidtermScore();
-                fin = g.getFinalScore();
-            }
+            try {
+                Grade g = studentService.getStudentGrade(s.getStudentID());
+                if (g != null) {
+                    reg = g.getRegularScore();
+                    mid = g.getMidtermScore();
+                    fin = g.getFinalScore();
+                }
+            } catch (Exception ignored) {}
 
             double avg = studentService.calculateAvg(reg, mid, fin);
             String rank = studentService.classify(avg);
 
-            // Tra cứu tên lớp
-            String classID = s.getStudentClass();
-            String classNameDisplay = classMap.getOrDefault(classID, classID);
-
             tableModel.addRow(new Object[]{
-                    s.getStudentID(),
-                    s.getStudentName(),
-                    classNameDisplay,
-                    s.getGender(),
+                    s.getStudentID(), s.getStudentName(), s.getStudentClass(), s.getGender(),
                     reg, mid, fin, String.format("%.2f", avg), rank
             });
         }

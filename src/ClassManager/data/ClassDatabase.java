@@ -9,17 +9,20 @@ public class ClassDatabase {
     private static ClassDatabase classBD = new ClassDatabase();
     private ArrayList<Classes> classes = new ArrayList<>();
 
-    private ClassDatabase(){}
+    private ClassDatabase() {
+    }
 
-    public static ClassDatabase getClassDB(){ return classBD; }
+    public static ClassDatabase getClassDB() {
+        return classBD;
+    }
 
     public ArrayList<Classes> getAllClasses() {
         return classes;
     }
 
-    public Classes findClassByID(String classID){
-        for (Classes c : classes){
-            if (c.getClassID().equalsIgnoreCase(classID)){
+    public Classes findClassByID(String classID) {
+        for (Classes c : classes) {
+            if (c.getClassID().equalsIgnoreCase(classID)) {
                 return c;
             }
         }
@@ -47,6 +50,7 @@ public class ClassDatabase {
         old.setClassID(newID);
         old.setClassName(newName);
 
+
         if (!oldID.equalsIgnoreCase(newID)) {
             updateStudentsClassName(oldID, newID);
         }
@@ -54,9 +58,10 @@ public class ClassDatabase {
 
     public void deleteClass(String classID) throws Exception {
         Classes c = findClassByID(classID);
-        if (c == null){
+        if (c == null) {
             throw new Exception("Không tìm thấy lớp " + classID);
         }
+
 
         if (c.getStudentNumber() > 0 || !c.getStudents().isEmpty()) {
             throw new Exception("Không thể xóa lớp còn " + c.getStudentNumber() +

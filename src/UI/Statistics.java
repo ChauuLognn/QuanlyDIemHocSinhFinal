@@ -1,226 +1,209 @@
 package UI;
 
+import AccountManager.Account;
 import Database.DatabaseConnection;
+
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.awt.geom.Arc2D;
 import java.sql.*;
 import java.text.DecimalFormat;
 
 public class Statistics extends JFrame {
-    // ✅ ĐÃ SỬA: Bỏ cấu hình SQL Server, dùng DatabaseConnection chung
+    private Account currentAccount;
 
-    // Colors
-    private final Color primaryColor = new Color(70, 70, 70);
-    private final Color secondaryColor = new Color(245, 245, 245);
+    // --- COLORS ---
+    private final Color primaryColor = Color.decode("#1E40AF");
+    private final Color bgColor      = Color.decode("#F3F4F6");
+    private final Color cardColor    = Color.WHITE;
+    private final Color textColor    = Color.decode("#111827");
+    private final Color grayText     = Color.decode("#6B7280");
+    private final Color lineColor    = Color.decode("#E5E7EB");
+
+    // Colors for Charts
     private final Color[] chartColors = {
-            new Color(46, 204, 113), // Giỏi (Xanh lá)
-            new Color(52, 152, 219), // Khá (Xanh dương)
-            new Color(241, 196, 15), // TB (Vàng)
-            new Color(231, 76, 60)   // Yếu (Đỏ)
+            Color.decode("#10B981"), // Giỏi (Xanh lá)
+            Color.decode("#3B82F6"), // Khá (Xanh dương)
+            Color.decode("#F59E0B"), // TB (Vàng)
+            Color.decode("#EF4444")  // Yếu (Đỏ)
     };
 
-    // Biến lưu dữ liệu thống kê
-    private int totalHS = 0;
-    private int totalLop = 0;
-    private int countGioi = 0;
-    private int countKha = 0;
-    private int countTB = 0;
-    private int countYeu = 0;
+    private int totalHS = 0, totalLop = 0;
+    private int countGioi = 0, countKha = 0, countTB = 0, countYeu = 0;
 
-    public Statistics() {
-        // 1. Tải dữ liệu từ SQL trước khi vẽ giao diện
-        loadDataFromDB();
+    public Statistics(Account account) {
+        this.currentAccount = account;
+        loadDataFromDB(); // Tải dữ liệu
 
-        setTitle("Thống kê & Báo cáo");
-        setSize(1200, 750);
+        setTitle("Thống kê số liệu");
+        setSize(1300, 800);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setLayout(new BorderLayout());
 
-        // 2. Top Bar
+        // 1. TOP BAR
         add(createTopBar(), BorderLayout.NORTH);
 
-        // 3. Main Content
-        JPanel content = new JPanel();
-        content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
-        content.setBackground(secondaryColor);
-        content.setBorder(new EmptyBorder(20, 20, 20, 20));
+        // 2. MAIN CONTENT (Chia bố cục Grid cho chắc chắn)
+        JPanel mainPanel = new JPanel(new BorderLayout(0, 20));
+        mainPanel.setBackground(bgColor);
+        mainPanel.setBorder(new EmptyBorder(25, 25, 25, 25));
 
-        // --- Phần 1: Các thẻ chỉ số (KPIs) ---
-        content.add(createKPIGrid());
-        content.add(Box.createRigidArea(new Dimension(0, 20)));
+        // Phần trên: 4 Thẻ KPI
+        mainPanel.add(createKPIGrid(), BorderLayout.NORTH);
 
-        // --- Phần 2: Biểu đồ ---
-        JPanel chartsPanel = new JPanel(new GridLayout(1, 2, 20, 0));
-        chartsPanel.setBackground(secondaryColor);
-        chartsPanel.setPreferredSize(new Dimension(1100, 400));
+        // Phần giữa: 2 Biểu đồ
+        mainPanel.add(createChartsPanel(), BorderLayout.CENTER);
 
-        // Truyền dữ liệu thật vào biểu đồ
-        chartsPanel.add(createChartCard("Phổ điểm học sinh", new BarChartPanel(countGioi, countKha, countTB, countYeu)));
-        chartsPanel.add(createChartCard("Tỉ lệ học lực", new PieChartPanel(countGioi, countKha, countTB, countYeu)));
-
-        content.add(chartsPanel);
-        add(content, BorderLayout.CENTER);
-    }
-
-    // ================= DATABASE LOGIC - ✅ ĐÃ SỬA =================
-    private void loadDataFromDB() {
-        // ✅ SỬA: Dùng DatabaseConnection thay vì hardcode SQL Server
-        try (Connection con = DatabaseConnection.getConnection()) {
-
-            if (con == null) {
-                JOptionPane.showMessageDialog(this,
-                        "Không thể kết nối Database!\nVui lòng kiểm tra MySQL đang chạy.",
-                        "Lỗi", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
-            // 1. Lấy tổng số học sinh - ✅ Kiểm tra tên bảng
-            String sqlHS = "SELECT COUNT(*) AS Tong FROM Student"; // Hoặc HocSinh tùy DB của bạn
-            try (PreparedStatement psHS = con.prepareStatement(sqlHS);
-                 ResultSet rsHS = psHS.executeQuery()) {
-                if (rsHS.next()) totalHS = rsHS.getInt("Tong");
-            } catch (SQLException e) {
-                System.err.println("⚠️ Lỗi đếm học sinh (Bảng có thể chưa tồn tại): " + e.getMessage());
-            }
-
-            // 2. Lấy tổng số lớp - ✅ Kiểm tra tên bảng
-            String sqlLop = "SELECT COUNT(*) AS Tong FROM Classes"; // Hoặc LopHoc
-            try (PreparedStatement psLop = con.prepareStatement(sqlLop);
-                 ResultSet rsLop = psLop.executeQuery()) {
-                if (rsLop.next()) totalLop = rsLop.getInt("Tong");
-            } catch (SQLException e) {
-                System.err.println("⚠️ Lỗi đếm lớp (Bảng có thể chưa tồn tại): " + e.getMessage());
-            }
-
-            // 3. Lấy thống kê điểm - ✅ Kiểm tra cột DiemTrungBinh
-            String sqlScore = "SELECT " +
-                    "SUM(CASE WHEN (regularScore + midtermScore*2 + finalScore*3)/6 >= 8.0 THEN 1 ELSE 0 END) as Gioi, " +
-                    "SUM(CASE WHEN (regularScore + midtermScore*2 + finalScore*3)/6 >= 6.5 AND (regularScore + midtermScore*2 + finalScore*3)/6 < 8.0 THEN 1 ELSE 0 END) as Kha, " +
-                    "SUM(CASE WHEN (regularScore + midtermScore*2 + finalScore*3)/6 >= 5.0 AND (regularScore + midtermScore*2 + finalScore*3)/6 < 6.5 THEN 1 ELSE 0 END) as TB, " +
-                    "SUM(CASE WHEN (regularScore + midtermScore*2 + finalScore*3)/6 < 5.0 THEN 1 ELSE 0 END) as Yeu " +
-                    "FROM Grade"; // Hoặc Diem
-
-            try (PreparedStatement psScore = con.prepareStatement(sqlScore);
-                 ResultSet rsScore = psScore.executeQuery()) {
-                if (rsScore.next()) {
-                    countGioi = rsScore.getInt("Gioi");
-                    countKha = rsScore.getInt("Kha");
-                    countTB = rsScore.getInt("TB");
-                    countYeu = rsScore.getInt("Yeu");
-                }
-            } catch (SQLException e) {
-                System.err.println("⚠️ Lỗi thống kê điểm (Bảng Grade có thể chưa tồn tại): " + e.getMessage());
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(this,
-                    "Lỗi tải dữ liệu: " + e.getMessage() +
-                            "\n\nGợi ý: Kiểm tra tên bảng trong MySQL phải khớp với code",
-                    "Lỗi Database", JOptionPane.ERROR_MESSAGE);
-        }
+        add(mainPanel, BorderLayout.CENTER);
     }
 
     // ================= TOP BAR =================
     private JPanel createTopBar() {
-        JPanel topBar = new JPanel(new BorderLayout());
-        topBar.setBackground(primaryColor);
-        topBar.setPreferredSize(new Dimension(0, 60));
-        topBar.setBorder(new EmptyBorder(15, 20, 15, 20));
+        JPanel navbar = new JPanel(new BorderLayout());
+        navbar.setPreferredSize(new Dimension(0, 60));
+        navbar.setBackground(cardColor);
+        navbar.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, lineColor));
 
-        JLabel title = new JLabel("THỐNG KÊ DỮ LIỆU");
-        title.setFont(new Font("Arial", Font.BOLD, 16));
-        title.setForeground(Color.WHITE);
-        topBar.add(title, BorderLayout.WEST);
+        JLabel title = new JLabel("  TỔNG QUAN & THỐNG KÊ");
+        title.setFont(new Font("Segoe UI", Font.BOLD, 20));
+        title.setForeground(primaryColor);
+        title.setBorder(new EmptyBorder(0, 15, 0, 0));
+        navbar.add(title, BorderLayout.WEST);
 
-        JButton btnBack = new JButton("← Quay lại");
-        btnBack.setFont(new Font("Arial", Font.BOLD, 12));
-        btnBack.setForeground(Color.WHITE);
-        btnBack.setBackground(new Color(100, 100, 100));
-        btnBack.setOpaque(true);
-        btnBack.setBorderPainted(false);
+        JButton btnBack = new JButton("← Dashboard");
+        btnBack.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btnBack.setForeground(grayText);
+        btnBack.setBackground(cardColor);
+        btnBack.setBorder(new EmptyBorder(0, 15, 0, 15));
         btnBack.setFocusPainted(false);
         btnBack.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btnBack.addActionListener(e -> backToDashboard());
-        btnBack.addMouseListener(new MouseAdapter() {
-            public void mouseEntered(MouseEvent e) { btnBack.setBackground(new Color(120, 120, 120)); }
-            public void mouseExited(MouseEvent e) { btnBack.setBackground(new Color(100, 100, 100)); }
+
+        btnBack.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent e) { btnBack.setForeground(primaryColor); }
+            public void mouseExited(java.awt.event.MouseEvent e) { btnBack.setForeground(grayText); }
         });
 
-        topBar.add(btnBack, BorderLayout.EAST);
-        return topBar;
+        btnBack.addActionListener(e -> {
+            this.dispose();
+            new Dashboard(currentAccount).setVisible(true);
+        });
+
+        navbar.add(btnBack, BorderLayout.EAST);
+        return navbar;
     }
 
     // ================= KPI CARDS =================
     private JPanel createKPIGrid() {
-        JPanel panel = new JPanel(new GridLayout(1, 4, 15, 0));
-        panel.setBackground(secondaryColor);
-        panel.setPreferredSize(new Dimension(0, 120));
-        panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 120));
+        JPanel panel = new JPanel(new GridLayout(1, 4, 20, 0)); // 1 hàng 4 cột
+        panel.setBackground(bgColor);
+        panel.setPreferredSize(new Dimension(0, 130)); // Chiều cao cố định
 
-        panel.add(createKPICard("Tổng học sinh",String.valueOf(totalHS), new Color(52, 152, 219)));
-        panel.add(createKPICard("Học sinh Giỏi", String.valueOf(countGioi), new Color(46, 204, 113)));
-        panel.add(createKPICard("Học sinh Yếu", String.valueOf(countYeu), new Color(231, 76, 60)));
-        panel.add(createKPICard("Tổng số Lớp", String.valueOf(totalLop), new Color(155, 89, 182)));
+        panel.add(createCard("Tổng học sinh", String.valueOf(totalHS), chartColors[1]));
+        panel.add(createCard("Học sinh Giỏi", String.valueOf(countGioi), chartColors[0]));
+        panel.add(createCard("Học sinh Yếu", String.valueOf(countYeu), chartColors[3]));
+        panel.add(createCard("Tổng số Lớp", String.valueOf(totalLop), Color.decode("#8B5CF6")));
 
         return panel;
     }
 
-    private JPanel createKPICard(String title, String value, Color barColor) {
-        JPanel card = new JPanel(new BorderLayout());
-        card.setBackground(Color.WHITE);
-        card.setBorder(BorderFactory.createMatteBorder(0, 0, 4, 0, barColor));
-
-        JPanel textPanel = new JPanel(new GridLayout(2, 1));
-        textPanel.setBackground(Color.WHITE);
-        textPanel.setBorder(new EmptyBorder(15, 20, 15, 20));
+    private JPanel createCard(String title, String value, Color accentColor) {
+        JPanel card = new JPanel(null);
+        card.setBackground(cardColor);
+        // Viền dưới màu theo loại
+        card.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(lineColor),
+                BorderFactory.createMatteBorder(0, 0, 4, 0, accentColor)
+        ));
 
         JLabel lblVal = new JLabel(value);
-        lblVal.setFont(new Font("Arial", Font.BOLD, 28));
-        lblVal.setForeground(primaryColor);
+        lblVal.setFont(new Font("Segoe UI", Font.BOLD, 36));
+        lblVal.setForeground(textColor);
+        lblVal.setBounds(20, 20, 150, 45);
+        card.add(lblVal);
 
         JLabel lblTitle = new JLabel(title);
-        lblTitle.setFont(new Font("Arial", Font.PLAIN, 14));
-        lblTitle.setForeground(Color.GRAY);
+        lblTitle.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        lblTitle.setForeground(grayText);
+        lblTitle.setBounds(20, 70, 150, 20);
+        card.add(lblTitle);
 
-        textPanel.add(lblVal);
-        textPanel.add(lblTitle);
-        card.add(textPanel, BorderLayout.CENTER);
         return card;
     }
 
-    private JPanel createChartCard(String title, JPanel chart) {
-        JPanel card = new JPanel(new BorderLayout());
-        card.setBackground(Color.WHITE);
-        card.setBorder(new EmptyBorder(15, 15, 15, 15));
-        JLabel lblTitle = new JLabel(title);
-        lblTitle.setFont(new Font("Arial", Font.BOLD, 15));
-        lblTitle.setForeground(primaryColor);
-        lblTitle.setBorder(new EmptyBorder(0, 0, 15, 0));
-        card.add(lblTitle, BorderLayout.NORTH);
-        card.add(chart, BorderLayout.CENTER);
-        return card;
+    // ================= CHARTS PANEL =================
+    private JPanel createChartsPanel() {
+        JPanel panel = new JPanel(new GridLayout(1, 2, 20, 0)); // 1 hàng 2 cột
+        panel.setBackground(bgColor);
+
+        // Biểu đồ cột
+        panel.add(createChartContainer("Phổ điểm học sinh", new BarChartPanel(countGioi, countKha, countTB, countYeu)));
+
+        // Biểu đồ tròn
+        panel.add(createChartContainer("Tỉ lệ học lực", new PieChartPanel(countGioi, countKha, countTB, countYeu)));
+
+        return panel;
     }
 
-    // ================= BAR CHART =================
+    private JPanel createChartContainer(String title, JPanel chart) {
+        JPanel container = new JPanel(new BorderLayout());
+        container.setBackground(cardColor);
+        container.setBorder(BorderFactory.createLineBorder(lineColor));
+
+        JLabel lblTitle = new JLabel(title);
+        lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        lblTitle.setForeground(textColor);
+        lblTitle.setBorder(new EmptyBorder(15, 20, 10, 0));
+
+        container.add(lblTitle, BorderLayout.NORTH);
+        container.add(chart, BorderLayout.CENTER);
+        return container;
+    }
+
+    // ================= DATABASE LOGIC =================
+    private void loadDataFromDB() {
+        try (Connection con = DatabaseConnection.getConnection()) {
+            if (con == null) return;
+            // 1. Đếm HS
+            try (PreparedStatement ps = con.prepareStatement("SELECT COUNT(*) AS Tong FROM student"); ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) totalHS = rs.getInt("Tong");
+            }
+            // 2. Đếm Lớp
+            try (PreparedStatement ps = con.prepareStatement("SELECT COUNT(*) AS Tong FROM classes"); ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) totalLop = rs.getInt("Tong");
+            }
+            // 3. Thống kê điểm
+            String sql = "SELECT " +
+                    "SUM(CASE WHEN (regularScore+midtermScore*2+finalScore*3)/6 >= 8 THEN 1 ELSE 0 END) as Gioi, " +
+                    "SUM(CASE WHEN (regularScore+midtermScore*2+finalScore*3)/6 >= 6.5 AND (regularScore+midtermScore*2+finalScore*3)/6 < 8 THEN 1 ELSE 0 END) as Kha, " +
+                    "SUM(CASE WHEN (regularScore+midtermScore*2+finalScore*3)/6 >= 5 AND (regularScore+midtermScore*2+finalScore*3)/6 < 6.5 THEN 1 ELSE 0 END) as TB, " +
+                    "SUM(CASE WHEN (regularScore+midtermScore*2+finalScore*3)/6 < 5 THEN 1 ELSE 0 END) as Yeu " +
+                    "FROM grade";
+            try (PreparedStatement ps = con.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    countGioi = rs.getInt("Gioi");
+                    countKha = rs.getInt("Kha");
+                    countTB = rs.getInt("TB");
+                    countYeu = rs.getInt("Yeu");
+                }
+            }
+        } catch (Exception e) { e.printStackTrace(); }
+    }
+
+    // ================= CUSTOM CHARTS (VẼ LẠI) =================
+
+    // 1. Biểu đồ cột (Bar Chart)
     class BarChartPanel extends JPanel {
         private int[] values;
         private final String[] labels = {"Giỏi", "Khá", "TB", "Yếu"};
         private int maxValue = 10;
 
         public BarChartPanel(int g, int k, int tb, int y) {
-            setBackground(Color.WHITE);
+            setBackground(cardColor);
             this.values = new int[]{g, k, tb, y};
-
-            for(int val : values) {
-                if(val > maxValue) maxValue = val;
-            }
-            maxValue = (int)(maxValue * 1.2);
+            for(int val : values) if(val > maxValue) maxValue = val;
+            maxValue = (maxValue == 0) ? 10 : (int)(maxValue * 1.2); // Tránh chia cho 0
         }
 
         @Override
@@ -232,56 +215,60 @@ public class Statistics extends JFrame {
             int width = getWidth();
             int height = getHeight();
             int barWidth = 60;
-            int gap = 50;
-            int x = (width - (barWidth * 4 + gap * 3)) / 2;
-            int baseY = height - 40;
+            int gap = 80;
+            // Tính toán để căn giữa biểu đồ
+            int totalChartWidth = (barWidth * 4) + (gap * 3);
+            int startX = (width - totalChartWidth) / 2;
+            int baseY = height - 50;
 
             for (int i = 0; i < values.length; i++) {
-                int barHeight = (int) ((double) values[i] / maxValue * (height - 80));
+                int barHeight = (int) ((double) values[i] / maxValue * (height - 100));
                 if (barHeight < 5 && values[i] > 0) barHeight = 5;
 
+                // Vẽ cột
                 g2.setColor(chartColors[i]);
-                g2.fillRoundRect(x, baseY - barHeight, barWidth, barHeight, 10, 10);
+                g2.fillRoundRect(startX, baseY - barHeight, barWidth, barHeight, 8, 8);
 
-                g2.setColor(Color.BLACK);
-                g2.setFont(new Font("Arial", Font.BOLD, 12));
+                // Vẽ số lượng trên đầu cột
+                g2.setColor(textColor);
+                g2.setFont(new Font("Segoe UI", Font.BOLD, 13));
                 String valStr = String.valueOf(values[i]);
-                int strWidth = g2.getFontMetrics().stringWidth(valStr);
-                g2.drawString(valStr, x + (barWidth - strWidth) / 2, baseY - barHeight - 5);
+                int strW = g2.getFontMetrics().stringWidth(valStr);
+                g2.drawString(valStr, startX + (barWidth - strW)/2, baseY - barHeight - 10);
 
-                g2.setColor(Color.GRAY);
-                g2.setFont(new Font("Arial", Font.PLAIN, 12));
-                int lblWidth = g2.getFontMetrics().stringWidth(labels[i]);
-                g2.drawString(labels[i], x + (barWidth - lblWidth) / 2, baseY + 20);
+                // Vẽ nhãn dưới chân cột
+                g2.setColor(grayText);
+                g2.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+                String lbl = labels[i];
+                int lblW = g2.getFontMetrics().stringWidth(lbl);
+                g2.drawString(lbl, startX + (barWidth - lblW)/2, baseY + 25);
 
-                x += barWidth + gap;
+                startX += barWidth + gap;
             }
         }
     }
 
-    // ================= PIE CHART =================
+    // 2. Biểu đồ tròn (Pie Chart)
     class PieChartPanel extends JPanel {
         private double[] values;
         private String[] labels;
 
         public PieChartPanel(int g, int k, int tb, int y) {
-            setBackground(Color.WHITE);
+            setBackground(cardColor);
             double total = g + k + tb + y;
             if (total == 0) total = 1;
 
-            double pG = (g / total) * 100;
-            double pK = (k / total) * 100;
-            double pTB = (tb / total) * 100;
-            double pY = (y / total) * 100;
-
-            this.values = new double[]{pG, pK, pTB, pY};
+            this.values = new double[]{
+                    (g/total)*360, (k/total)*360,
+                    (tb/total)*360, (y/total)*360
+            };
 
             DecimalFormat df = new DecimalFormat("##0.0");
             this.labels = new String[]{
-                    "Giỏi (" + df.format(pG) + "%)",
-                    "Khá (" + df.format(pK) + "%)",
-                    "TB (" + df.format(pTB) + "%)",
-                    "Yếu (" + df.format(pY) + "%)"
+                    "Giỏi ("+df.format((g/total)*100)+"%)",
+                    "Khá ("+df.format((k/total)*100)+"%)",
+                    "TB ("+df.format((tb/total)*100)+"%)",
+                    "Yếu ("+df.format((y/total)*100)+"%)"
             };
         }
 
@@ -291,42 +278,35 @@ public class Statistics extends JFrame {
             Graphics2D g2 = (Graphics2D) g;
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-            int width = getWidth();
-            int height = getHeight();
-            int diameter = Math.min(width, height) - 60;
-            int x = (width - diameter) / 2 - 60;
-            int y = (height - diameter) / 2;
+            int w = getWidth();
+            int h = getHeight();
+            int d = Math.min(w, h) - 80; // Đường kính
+            int x = (w - d) / 2 - 60;    // Căn trái một chút để nhường chỗ cho chú thích
+            int y = (h - d) / 2;
 
-            double currentAngle = 90;
-
+            double angle = 90;
             for (int i = 0; i < values.length; i++) {
-                double angle = values[i] * 360 / 100;
                 g2.setColor(chartColors[i]);
-                g2.fill(new Arc2D.Double(x, y, diameter, diameter, currentAngle, -angle, Arc2D.PIE));
-                currentAngle -= angle;
+                g2.fill(new Arc2D.Double(x, y, d, d, angle, -values[i], Arc2D.PIE));
+                angle -= values[i];
             }
 
-            drawLegend(g2, x + diameter + 40, y + 20);
-        }
-
-        private void drawLegend(Graphics2D g2, int x, int y) {
-            for (int i = 0; i < labels.length; i++) {
+            // Vẽ chú thích (Legend) bên phải
+            int lx = x + d + 40;
+            int ly = y + 40;
+            for(int i=0; i<labels.length; i++){
                 g2.setColor(chartColors[i]);
-                g2.fillRoundRect(x, y + i * 30, 15, 15, 4, 4);
+                g2.fillRoundRect(lx, ly + i*40, 16, 16, 4, 4);
 
-                g2.setColor(Color.DARK_GRAY);
-                g2.setFont(new Font("Arial", Font.PLAIN, 13));
-                g2.drawString(labels[i], x + 25, y + i * 30 + 12);
+                g2.setColor(textColor);
+                g2.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+                g2.drawString(labels[i], lx + 30, ly + i*40 + 13);
             }
         }
-    }
-
-    private void backToDashboard() {
-        this.dispose();
-        SwingUtilities.invokeLater(() -> new Dashboard().setVisible(true));
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new Statistics().setVisible(true));
+        Account mock = new Account("admin", "", "", "admin");
+        SwingUtilities.invokeLater(() -> new Statistics(mock).setVisible(true));
     }
 }

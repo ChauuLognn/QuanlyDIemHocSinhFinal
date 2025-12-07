@@ -26,7 +26,7 @@ public class Dashboard extends JFrame {
     private final Color textColor    = Color.decode("#111827");
     private final Color grayText     = Color.decode("#6B7280");
     private final Color lineColor    = Color.decode("#E5E7EB");
-    private final Color hoverColor   = Color.decode("#EFF6FF"); // Xanh rất nhạt khi hover menu
+    private final Color hoverColor   = Color.decode("#EFF6FF");
 
     private final Font fontTitle = new Font("Segoe UI", Font.BOLD, 24);
     private final Font fontHead  = new Font("Segoe UI", Font.BOLD, 16);
@@ -59,27 +59,26 @@ public class Dashboard extends JFrame {
         return "Học sinh";
     }
 
-    // ================= SIDEBAR (MENU TRÁI - KHÔNG ICON) =================
+    // ================= SIDEBAR =================
     private JPanel createSidebar() {
         JPanel sidebar = new JPanel(null);
-        sidebar.setPreferredSize(new Dimension(280, 0)); // Rộng hơn chút
+        sidebar.setPreferredSize(new Dimension(280, 0));
         sidebar.setBackground(cardColor);
         sidebar.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, lineColor));
 
-        // 1. BRAND
+        // Brand
         JLabel lblBrand = new JLabel("SCHOOL ADMIN");
         lblBrand.setFont(new Font("Segoe UI", Font.BOLD, 24));
         lblBrand.setForeground(primaryColor);
         lblBrand.setBounds(30, 30, 220, 40);
         sidebar.add(lblBrand);
 
-        // 2. USER PROFILE (Gọn gàng hơn)
+        // User Profile
         JPanel userPanel = new JPanel(null);
         userPanel.setBackground(bgColor);
         userPanel.setBounds(20, 90, 240, 70);
         userPanel.setBorder(new LineBorder(lineColor, 1, true));
 
-        // Avatar circle giả lập bằng text
         JLabel lblAvatar = new JLabel(currentAccount.getUsername().substring(0, 1).toUpperCase());
         lblAvatar.setFont(new Font("Segoe UI", Font.BOLD, 24));
         lblAvatar.setForeground(Color.WHITE);
@@ -87,8 +86,6 @@ public class Dashboard extends JFrame {
         lblAvatar.setOpaque(true);
         lblAvatar.setBackground(primaryColor);
         lblAvatar.setBounds(15, 15, 40, 40);
-        // Bo tròn avatar (Hack nhỏ: vẽ đè lên background)
-
         userPanel.add(lblAvatar);
 
         JLabel lblUser = new JLabel(currentAccount.getUsername());
@@ -104,7 +101,7 @@ public class Dashboard extends JFrame {
         userPanel.add(lblRole);
         sidebar.add(userPanel);
 
-        // 3. MENU ITEMS (CHỮ THÔI)
+        // --- MENU ITEMS ---
         int y = 200;
         String role = currentAccount.getRole();
 
@@ -119,21 +116,29 @@ public class Dashboard extends JFrame {
         if ("admin".equals(role)) {
             sidebar.add(createMenuBtn("Lớp học", y, false));
             y += 50;
-            sidebar.add(createMenuBtn("Báo cáo & Thống kê", y, false));
+
+            // ✅ ĐÃ SỬA: Nút cài đặt
+            sidebar.add(createMenuBtn("Cài đặt hệ thống", y, false));
+            y += 50;
+
+            sidebar.add(createMenuBtn("Xuất báo cáo", y, false));
             y += 50;
         }
 
         if ("student".equals(role)) {
             sidebar.add(createMenuBtn("Xem điểm cá nhân", y, false));
             y += 50;
+            // Học sinh cũng có thể vào cài đặt để đổi mật khẩu
+            sidebar.add(createMenuBtn("Cài đặt hệ thống", y, false));
+            y += 50;
         }
 
-        // 4. LOGOUT
+        // Logout
         JButton btnLogout = new JButton("Đăng xuất");
         btnLogout.setBounds(20, 750, 240, 45);
         btnLogout.setFont(fontMenu);
         btnLogout.setForeground(Color.WHITE);
-        btnLogout.setBackground(Color.decode("#EF4444")); // Đỏ
+        btnLogout.setBackground(Color.decode("#EF4444"));
         btnLogout.setBorderPainted(false);
         btnLogout.setFocusPainted(false);
         btnLogout.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -151,7 +156,6 @@ public class Dashboard extends JFrame {
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
         btn.setFocusPainted(false);
         btn.setBorderPainted(false);
-        // Padding text
         btn.setBorder(new EmptyBorder(0, 20, 0, 0));
 
         if (isActive) {
@@ -189,12 +193,10 @@ public class Dashboard extends JFrame {
         int totalStudents = studentDB.getAllStudents().size();
         int totalClasses = classDB.getAllClasses().size();
 
-        // Cards (Top row)
         content.add(createCard("Tổng học sinh", String.valueOf(totalStudents), 40, 100));
         content.add(createCard("Tổng số lớp", String.valueOf(totalClasses), 300, 100));
         content.add(createCard("Học kỳ hiện tại", "HK1 - 2025", 560, 100));
 
-        // Info Panels (Bottom row)
         DashboardService service = new DashboardService();
         content.add(createListCard("Phân loại học lực", service.calculatePerformanceStats(), 40, 260, 400));
         content.add(createListCard("Lớp học tiêu biểu (Top ĐTB)", service.calculateTopClasses(), 480, 260, 500));
@@ -206,7 +208,7 @@ public class Dashboard extends JFrame {
         JPanel card = new JPanel(null);
         card.setBounds(x, y, 240, 130);
         card.setBackground(cardColor);
-        card.setBorder(BorderFactory.createMatteBorder(1, 1, 4, 1, lineColor)); // Viền dưới dày hơn giả bóng
+        card.setBorder(BorderFactory.createMatteBorder(1, 1, 4, 1, lineColor));
 
         JLabel lblVal = new JLabel(value);
         lblVal.setFont(new Font("Segoe UI", Font.BOLD, 36));
@@ -253,18 +255,27 @@ public class Dashboard extends JFrame {
         return card;
     }
 
+    // --- LOGIC ĐIỀU HƯỚNG ---
     private void handleMenuClick(String menuName) {
         if ("Quản lý học sinh".equals(menuName)) {
             this.dispose();
             new StudentManagement(currentAccount).setVisible(true);
-        } else if ("Lớp học".equals(menuName)) {
+        }
+        else if ("Lớp học".equals(menuName)) {
             this.dispose();
             new ClassManagement(currentAccount).setVisible(true);
-        } else if ("Báo cáo & Thống kê".equals(menuName)) {
+        }
+        else if ("Xuất báo cáo".equals(menuName)) {
             this.dispose();
-            new Statistics(currentAccount).setVisible(true);
-        } else if ("Xem điểm cá nhân".equals(menuName)) {
+            new ReportManagement(currentAccount).setVisible(true);
+        }
+        else if ("Xem điểm cá nhân".equals(menuName)) {
             showStudentPersonalScore();
+        }
+        // ✅ ĐÃ SỬA: MỞ TRANG SETTINGS MỚI
+        else if ("Cài đặt hệ thống".equals(menuName)) {
+            this.dispose();
+            new Settings(currentAccount).setVisible(true);
         }
     }
 

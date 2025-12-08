@@ -107,12 +107,16 @@ public class Dashboard extends JFrame {
 
         sidebar.add(createMenuBtn("Trang chủ", y, true));
         y += 50;
-
-        if ("admin".equals(role) || "teacher".equals(role)) {
-            sidebar.add(createMenuBtn("Quản lý học sinh", y, false));
+        if ("admin".equals(role)) {
+            sidebar.add(createMenuBtn("Quản lý học sinh", y, false)); // Sửa hồ sơ
+            y += 50;
+            sidebar.add(createMenuBtn("Quản lý bảng điểm", y, false)); // Nhập điểm
             y += 50;
         }
-
+        if ("teacher".equals(role)) {
+            sidebar.add(createMenuBtn("Quản lý bảng điểm", y, false)); // Nhập điểm
+            y += 50;
+        }
         if ("admin".equals(role)) {
             sidebar.add(createMenuBtn("Lớp học", y, false));
             y += 50;
@@ -132,6 +136,8 @@ public class Dashboard extends JFrame {
             sidebar.add(createMenuBtn("Cài đặt hệ thống", y, false));
             y += 50;
         }
+
+
 
         // Logout
         JButton btnLogout = new JButton("Đăng xuất");
@@ -260,6 +266,11 @@ public class Dashboard extends JFrame {
         if ("Quản lý học sinh".equals(menuName)) {
             this.dispose();
             new StudentManagement(currentAccount).setVisible(true);
+        }
+        // ✅ THÊM DÒNG NÀY
+        else if ("Quản lý bảng điểm".equals(menuName)) {
+            this.dispose();
+            new GradeManagement(currentAccount).setVisible(true);
         }
         else if ("Lớp học".equals(menuName)) {
             this.dispose();

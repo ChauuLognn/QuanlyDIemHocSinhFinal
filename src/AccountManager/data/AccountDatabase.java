@@ -33,7 +33,6 @@ public class AccountDatabase {
                 list.add(new Account(
                         rs.getString("username"),
                         rs.getString("password"),
-                        // Quan trọng: Tên cột trong MySQL là studentID
                         rs.getString("studentID")
                 ));
             }
@@ -58,7 +57,7 @@ public class AccountDatabase {
             ps.setString(1, acc.getUsername());
             ps.setString(2, acc.getPassword()); // Pass đã hash từ Service
             ps.setString(3, acc.getID());       // ID này sẽ lưu vào cột studentID
-            ps.setString(4, "studen");            // Mặc định role là student
+            ps.setString(4, "student");            // Mặc định role là student
 
             ps.executeUpdate();
             conn.close();

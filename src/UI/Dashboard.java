@@ -116,19 +116,15 @@ public class Dashboard extends JFrame {
         y += 50;
 
         if ("student".equals(role)) {
-            // Học sinh chỉ cần Cài đặt (vì Trang chủ đã hiện hết thông tin rồi)
             sidebar.add(createMenuBtn("Cài đặt hệ thống", y, false));
             y += 50;
         }
 
-        if ("admin".equals(role) || "teacher".equals(role)) {
+        if ("admin".equals(role)){
             sidebar.add(createMenuBtn("Quản lý học sinh", y, false));
             y += 50;
             sidebar.add(createMenuBtn("Quản lý bảng điểm", y, false));
             y += 50;
-        }
-
-        if ("admin".equals(role)) {
             sidebar.add(createMenuBtn("Lớp học", y, false));
             y += 50;
             sidebar.add(createMenuBtn("Xuất báo cáo", y, false));
@@ -138,6 +134,8 @@ public class Dashboard extends JFrame {
         }
 
         if ("teacher".equals(role)) {
+            sidebar.add(createMenuBtn("Quản lý bảng điểm", y, false));
+            y += 50;
             sidebar.add(createMenuBtn("Cài đặt hệ thống", y, false));
             y += 50;
         }

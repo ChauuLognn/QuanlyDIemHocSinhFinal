@@ -204,7 +204,7 @@ public class Dashboard extends JFrame {
 
         content.add(createCard("Tổng học sinh", String.valueOf(totalStudents), 40, 100));
         content.add(createCard("Tổng số lớp", String.valueOf(totalClasses), 300, 100));
-        content.add(createCard("Học kỳ hiện tại", "HK1 - 2025", 560, 100));
+        content.add(createCard("Năm Học", "2025-2026", 560, 100));
 
         DashboardService service = new DashboardService();
         content.add(createListCard("Phân loại học lực", service.calculatePerformanceStats(), 40, 260, 400));

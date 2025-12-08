@@ -19,7 +19,6 @@ public class Dashboard extends JFrame {
     private JPanel mainPanel;
     private Account currentAccount;
 
-    // --- COLORS & FONTS ---
     private final Color primaryColor = Color.decode("#1E40AF");
     private final Color bgColor      = Color.decode("#F3F4F6");
     private final Color cardColor    = Color.WHITE;
@@ -47,7 +46,14 @@ public class Dashboard extends JFrame {
         setLayout(new BorderLayout());
 
         add(createSidebar(), BorderLayout.WEST);
-        mainPanel = createMainContent();
+
+        // QUYẾT ĐỊNH GIAO DIỆN DỰA TRÊN VAI TRÒ
+        if ("student".equals(currentAccount.getRole())) {
+            mainPanel = createStudentDashboard(); // Giao diện riêng cho HS
+        } else {
+            mainPanel = createAdminDashboard();   // Giao diện cho Admin/GV
+        }
+
         add(mainPanel, BorderLayout.CENTER);
     }
 
@@ -79,7 +85,8 @@ public class Dashboard extends JFrame {
         userPanel.setBounds(20, 90, 240, 70);
         userPanel.setBorder(new LineBorder(lineColor, 1, true));
 
-        JLabel lblAvatar = new JLabel(currentAccount.getUsername().substring(0, 1).toUpperCase());
+        String firstLetter = currentAccount.getUsername().isEmpty() ? "?" : currentAccount.getUsername().substring(0, 1).toUpperCase();
+        JLabel lblAvatar = new JLabel(firstLetter);
         lblAvatar.setFont(new Font("Segoe UI", Font.BOLD, 24));
         lblAvatar.setForeground(Color.WHITE);
         lblAvatar.setHorizontalAlignment(SwingConstants.CENTER);
@@ -107,37 +114,33 @@ public class Dashboard extends JFrame {
 
         sidebar.add(createMenuBtn("Trang chủ", y, true));
         y += 50;
-        if ("admin".equals(role)) {
-            sidebar.add(createMenuBtn("Quản lý học sinh", y, false)); // Sửa hồ sơ
-            y += 50;
-            sidebar.add(createMenuBtn("Quản lý bảng điểm", y, false)); // Nhập điểm
-            y += 50;
-        }
-        if ("teacher".equals(role)) {
-            sidebar.add(createMenuBtn("Quản lý bảng điểm", y, false)); // Nhập điểm
+
+        if ("student".equals(role)) {
+            // Học sinh chỉ cần Cài đặt (vì Trang chủ đã hiện hết thông tin rồi)
+            sidebar.add(createMenuBtn("Cài đặt hệ thống", y, false));
             y += 50;
         }
+
+        if ("admin".equals(role) || "teacher".equals(role)) {
+            sidebar.add(createMenuBtn("Quản lý học sinh", y, false));
+            y += 50;
+            sidebar.add(createMenuBtn("Quản lý bảng điểm", y, false));
+            y += 50;
+        }
+
         if ("admin".equals(role)) {
             sidebar.add(createMenuBtn("Lớp học", y, false));
             y += 50;
-
-            // ✅ ĐÃ SỬA: Nút cài đặt
-            sidebar.add(createMenuBtn("Cài đặt hệ thống", y, false));
-            y += 50;
-
             sidebar.add(createMenuBtn("Xuất báo cáo", y, false));
             y += 50;
-        }
-
-        if ("student".equals(role)) {
-            sidebar.add(createMenuBtn("Xem điểm cá nhân", y, false));
-            y += 50;
-            // Học sinh cũng có thể vào cài đặt để đổi mật khẩu
             sidebar.add(createMenuBtn("Cài đặt hệ thống", y, false));
             y += 50;
         }
 
-
+        if ("teacher".equals(role)) {
+            sidebar.add(createMenuBtn("Cài đặt hệ thống", y, false));
+            y += 50;
+        }
 
         // Logout
         JButton btnLogout = new JButton("Đăng xuất");
@@ -185,8 +188,8 @@ public class Dashboard extends JFrame {
         return btn;
     }
 
-    // --- MAIN CONTENT ---
-    private JPanel createMainContent() {
+    // ================= 1. GIAO DIỆN ADMIN / GIÁO VIÊN =================
+    private JPanel createAdminDashboard() {
         JPanel content = new JPanel(null);
         content.setBackground(bgColor);
 
@@ -210,54 +213,160 @@ public class Dashboard extends JFrame {
         return content;
     }
 
+    // ================= 2. GIAO DIỆN HỌC SINH (MỚI) =================
+    private JPanel createStudentDashboard() {
+        JPanel content = new JPanel(null);
+        content.setBackground(bgColor);
+
+        JLabel lblTitle = new JLabel("Hồ sơ cá nhân");
+        lblTitle.setFont(fontTitle);
+        lblTitle.setForeground(textColor);
+        lblTitle.setBounds(40, 40, 400, 40);
+        content.add(lblTitle);
+
+        // Lấy thông tin học sinh
+        String studentID = currentAccount.getID();
+        Student s = studentDB.findByID(studentID);
+        Grade g = gradeDB.getGradeByStudentID(studentID);
+
+        if (s == null) {
+            JLabel lblError = new JLabel("Chưa tìm thấy thông tin hồ sơ cho tài khoản này!");
+            lblError.setFont(fontHead);
+            lblError.setForeground(Color.RED);
+            lblError.setBounds(40, 100, 500, 30);
+            content.add(lblError);
+            return content;
+        }
+
+        // --- THẺ THÔNG TIN CÁ NHÂN ---
+        JPanel infoCard = new JPanel(null);
+        infoCard.setBounds(40, 100, 400, 250);
+        infoCard.setBackground(cardColor);
+        infoCard.setBorder(BorderFactory.createMatteBorder(4, 0, 0, 0, primaryColor)); // Viền trên màu xanh
+
+        JLabel lblName = new JLabel(s.getStudentName());
+        lblName.setFont(new Font("Segoe UI", Font.BOLD, 22));
+        lblName.setForeground(primaryColor);
+        lblName.setBounds(30, 20, 350, 40);
+        infoCard.add(lblName);
+
+        addInfoRow(infoCard, "Mã học sinh:", s.getStudentID(), 70);
+        addInfoRow(infoCard, "Lớp:", s.getStudentClass(), 110);
+        addInfoRow(infoCard, "Giới tính:", s.getGender(), 150);
+        addInfoRow(infoCard, "Trạng thái:", "Đang học", 190);
+
+        content.add(infoCard);
+
+        // --- THẺ ĐIỂM SỐ ---
+        JPanel scoreCard = new JPanel(null);
+        scoreCard.setBounds(480, 100, 500, 250);
+        scoreCard.setBackground(cardColor);
+        scoreCard.setBorder(BorderFactory.createMatteBorder(4, 0, 0, 0, Color.decode("#10B981"))); // Viền trên màu xanh lá
+
+        JLabel lblScoreTitle = new JLabel("Kết quả học tập");
+        lblScoreTitle.setFont(new Font("Segoe UI", Font.BOLD, 20));
+        lblScoreTitle.setForeground(textColor);
+        lblScoreTitle.setBounds(30, 20, 300, 40);
+        scoreCard.add(lblScoreTitle);
+
+        if (g != null) {
+            // Hiển thị 3 cột điểm
+            addScoreBox(scoreCard, "Thường xuyên", String.valueOf(g.getRegularScore()), 30, 80);
+            addScoreBox(scoreCard, "Giữa kỳ", String.valueOf(g.getMidtermScore()), 180, 80);
+            addScoreBox(scoreCard, "Cuối kỳ", String.valueOf(g.getFinalScore()), 330, 80);
+
+            // Điểm tổng kết to đùng
+            JLabel lblAvgTitle = new JLabel("Điểm Trung Bình:");
+            lblAvgTitle.setFont(fontText);
+            lblAvgTitle.setForeground(grayText);
+            lblAvgTitle.setBounds(30, 180, 150, 30);
+            scoreCard.add(lblAvgTitle);
+
+            JLabel lblAvg = new JLabel(String.format("%.2f", g.getAverage()));
+            lblAvg.setFont(new Font("Segoe UI", Font.BOLD, 36));
+            lblAvg.setForeground(primaryColor);
+            lblAvg.setBounds(150, 170, 150, 45);
+            scoreCard.add(lblAvg);
+
+            // Xếp loại
+            DashboardService service = new DashboardService(); // Mượn logic xếp loại nếu có, hoặc tự tính
+            // Ở đây mình tạm dùng logic đơn giản để demo
+            String rank = (g.getAverage() >= 8) ? "Giỏi" : (g.getAverage() >= 6.5) ? "Khá" : "Trung bình";
+            JLabel lblRank = new JLabel(rank);
+            lblRank.setOpaque(true);
+            lblRank.setBackground(rank.equals("Giỏi") ? Color.decode("#D1FAE5") : Color.decode("#FEF3C7"));
+            lblRank.setForeground(rank.equals("Giỏi") ? Color.decode("#065F46") : Color.decode("#92400E"));
+            lblRank.setFont(new Font("Segoe UI", Font.BOLD, 14));
+            lblRank.setHorizontalAlignment(SwingConstants.CENTER);
+            lblRank.setBounds(330, 180, 100, 30);
+            scoreCard.add(lblRank);
+
+        } else {
+            JLabel lblNoScore = new JLabel("Chưa có dữ liệu điểm số.");
+            lblNoScore.setFont(fontText);
+            lblNoScore.setBounds(30, 80, 300, 30);
+            scoreCard.add(lblNoScore);
+        }
+
+        content.add(scoreCard);
+
+        return content;
+    }
+
+    private void addInfoRow(JPanel p, String label, String value, int y) {
+        JLabel lblL = new JLabel(label);
+        lblL.setFont(fontText);
+        lblL.setForeground(grayText);
+        lblL.setBounds(30, y, 100, 25);
+        p.add(lblL);
+
+        JLabel lblV = new JLabel(value);
+        lblV.setFont(new Font("Segoe UI", Font.BOLD, 15));
+        lblV.setForeground(textColor);
+        lblV.setBounds(140, y, 200, 25);
+        p.add(lblV);
+    }
+
+    private void addScoreBox(JPanel p, String title, String score, int x, int y) {
+        JPanel box = new JPanel(new BorderLayout());
+        box.setBounds(x, y, 120, 70);
+        box.setBackground(bgColor);
+        box.setBorder(BorderFactory.createLineBorder(lineColor));
+
+        JLabel lblScore = new JLabel(score);
+        lblScore.setFont(new Font("Segoe UI", Font.BOLD, 24));
+        lblScore.setHorizontalAlignment(SwingConstants.CENTER);
+        lblScore.setForeground(textColor);
+
+        JLabel lblTitle = new JLabel(title);
+        lblTitle.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        lblTitle.setHorizontalAlignment(SwingConstants.CENTER);
+        lblTitle.setForeground(grayText);
+        lblTitle.setBorder(new EmptyBorder(5,0,5,0));
+
+        box.add(lblScore, BorderLayout.CENTER);
+        box.add(lblTitle, BorderLayout.SOUTH);
+        p.add(box);
+    }
+
+    // --- CÁC HÀM CŨ (CreateCard,...) GIỮ NGUYÊN ĐỂ DÙNG CHO ADMIN ---
     private JPanel createCard(String title, String value, int x, int y) {
         JPanel card = new JPanel(null);
         card.setBounds(x, y, 240, 130);
         card.setBackground(cardColor);
         card.setBorder(BorderFactory.createMatteBorder(1, 1, 4, 1, lineColor));
-
-        JLabel lblVal = new JLabel(value);
-        lblVal.setFont(new Font("Segoe UI", Font.BOLD, 36));
-        lblVal.setForeground(primaryColor);
-        lblVal.setBounds(25, 25, 200, 45);
-        card.add(lblVal);
-
-        JLabel lblTitle = new JLabel(title);
-        lblTitle.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        lblTitle.setForeground(grayText);
-        lblTitle.setBounds(25, 80, 200, 20);
-        card.add(lblTitle);
+        JLabel lblVal = new JLabel(value); lblVal.setFont(new Font("Segoe UI", Font.BOLD, 36)); lblVal.setForeground(primaryColor); lblVal.setBounds(25, 25, 200, 45); card.add(lblVal);
+        JLabel lblTitle = new JLabel(title); lblTitle.setFont(new Font("Segoe UI", Font.PLAIN, 14)); lblTitle.setForeground(grayText); lblTitle.setBounds(25, 80, 200, 20); card.add(lblTitle);
         return card;
     }
-
     private JPanel createListCard(String title, String[] items, int x, int y, int width) {
         JPanel card = new JPanel(null);
         card.setBounds(x, y, width, 450);
         card.setBackground(cardColor);
         card.setBorder(BorderFactory.createLineBorder(lineColor));
-
-        JLabel lblHeader = new JLabel(title);
-        lblHeader.setFont(fontHead);
-        lblHeader.setForeground(textColor);
-        lblHeader.setBounds(30, 25, 300, 30);
-
-        JSeparator sep = new JSeparator();
-        sep.setBounds(30, 65, width - 60, 1);
-        sep.setForeground(lineColor);
-        card.add(lblHeader);
-        card.add(sep);
-
-        if (items != null) {
-            int itemY = 85;
-            for (String item : items) {
-                JLabel lblItem = new JLabel(item);
-                lblItem.setFont(fontText);
-                lblItem.setForeground(textColor);
-                lblItem.setBounds(30, itemY, width - 60, 25);
-                card.add(lblItem);
-                itemY += 40;
-            }
-        }
+        JLabel lblHeader = new JLabel(title); lblHeader.setFont(fontHead); lblHeader.setForeground(textColor); lblHeader.setBounds(30, 25, 300, 30);
+        JSeparator sep = new JSeparator(); sep.setBounds(30, 65, width - 60, 1); sep.setForeground(lineColor); card.add(lblHeader); card.add(sep);
+        if (items != null) { int itemY = 85; for (String item : items) { JLabel lblItem = new JLabel(item); lblItem.setFont(fontText); lblItem.setForeground(textColor); lblItem.setBounds(30, itemY, width - 60, 25); card.add(lblItem); itemY += 40; } }
         return card;
     }
 
@@ -267,7 +376,6 @@ public class Dashboard extends JFrame {
             this.dispose();
             new StudentManagement(currentAccount).setVisible(true);
         }
-        // ✅ THÊM DÒNG NÀY
         else if ("Quản lý bảng điểm".equals(menuName)) {
             this.dispose();
             new GradeManagement(currentAccount).setVisible(true);
@@ -280,33 +388,10 @@ public class Dashboard extends JFrame {
             this.dispose();
             new ReportManagement(currentAccount).setVisible(true);
         }
-        else if ("Xem điểm cá nhân".equals(menuName)) {
-            showStudentPersonalScore();
-        }
-        // ✅ ĐÃ SỬA: MỞ TRANG SETTINGS MỚI
         else if ("Cài đặt hệ thống".equals(menuName)) {
             this.dispose();
             new Settings(currentAccount).setVisible(true);
         }
-    }
-
-    private void showStudentPersonalScore() {
-        String studentID = currentAccount.getID();
-        if (studentID == null || studentID.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Tài khoản này chưa liên kết với mã học sinh nào!");
-            return;
-        }
-        Grade g = gradeDB.getGradeByStudentID(studentID);
-        Student s = studentDB.findByID(studentID);
-
-        if (s == null) {
-            JOptionPane.showMessageDialog(this, "Không tìm thấy thông tin học sinh!");
-            return;
-        }
-        String msg = "Học sinh: " + s.getStudentName() + "\nLớp: " + s.getStudentClass() + "\n----------------\n";
-        if (g != null) msg += "Điểm TB: " + String.format("%.2f", g.getAverage());
-        else msg += "Chưa có điểm.";
-        JOptionPane.showMessageDialog(this, msg, "Bảng điểm cá nhân", JOptionPane.INFORMATION_MESSAGE);
     }
 
     private void logout() {

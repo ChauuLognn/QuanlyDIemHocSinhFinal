@@ -10,83 +10,58 @@ public class GradeDatabase {
     private GradeDatabase(){}
     public static GradeDatabase getGradeDB(){ return gradeDB; }
 
-    // 1. Lấy điểm của 1 học sinh
-    public Grade getGradeByStudentID (String studentID) {
+    // --- 1. HÀM MỚI (CÓ HỌC KỲ) - Dùng cho GradeManagement ---
+    public Grade getGrade(String studentID, int semester) {
         Grade grade = null;
         Connection conn = DatabaseConnection.getConnection();
-        String sql = "SELECT * FROM grade WHERE studentID = ?";
-
+        String sql = "SELECT * FROM grade WHERE studentID = ? AND semester = ?";
         try {
             PreparedStatement ps = conn.prepareStatement(sql);
             ps.setString(1, studentID);
+            ps.setInt(2, semester);
             ResultSet rs = ps.executeQuery();
             if(rs.next()){
                 grade = new Grade(
                         rs.getString("studentID"),
+                        rs.getInt("semester"),
                         rs.getDouble("regularScore"),
                         rs.getDouble("midtermScore"),
                         rs.getDouble("finalScore")
                 );
             }
             conn.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        } catch (Exception e) { e.printStackTrace(); }
         return grade;
     }
 
-    // 2. Thêm hoặc cập nhật điểm (Dùng cú pháp MySQL)
-    public void addOrUpdateGrade(Grade grade) {
+    public void addOrUpdateGrade(String studentID, int semester, double r, double m, double f) {
         Connection conn = DatabaseConnection.getConnection();
-
-        // Cú pháp dành riêng cho MySQL: Nếu trùng khoá chính (studentID) thì Update, chưa có thì Insert
-        String sql = "INSERT INTO grade(studentID, regularScore, midtermScore, finalScore) " +
-                "VALUES (?, ?, ?, ?) " +
-                "ON DUPLICATE KEY UPDATE " +
-                "regularScore = VALUES(regularScore), " +
-                "midtermScore = VALUES(midtermScore), " +
-                "finalScore = VALUES(finalScore)";
-
-        try {
-            PreparedStatement ps = conn.prepareStatement(sql);
-            ps.setString(1, grade.getStudentID());
-            ps.setDouble(2, grade.getRegularScore());
-            ps.setDouble(3, grade.getMidtermScore());
-            ps.setDouble(4, grade.getFinalScore());
-
-            ps.executeUpdate();
-            conn.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    // 3. Xóa điểm
-    public void deleteGrade(String studentID) {
-        Connection conn = DatabaseConnection.getConnection();
-        String sql = "DELETE FROM grade WHERE studentID = ?";
+        String sql = "INSERT INTO grade(studentID, semester, regularScore, midtermScore, finalScore) VALUES (?, ?, ?, ?, ?) " +
+                "ON DUPLICATE KEY UPDATE regularScore=VALUES(regularScore), midtermScore=VALUES(midtermScore), finalScore=VALUES(finalScore)";
         try {
             PreparedStatement ps = conn.prepareStatement(sql);
             ps.setString(1, studentID);
+            ps.setInt(2, semester);
+            ps.setDouble(3, r);
+            ps.setDouble(4, m);
+            ps.setDouble(5, f);
             ps.executeUpdate();
             conn.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        } catch (SQLException e) { e.printStackTrace(); }
     }
 
-    // 4. Lấy toàn bộ điểm (Hàm này giúp tối ưu tốc độ load bảng)
-    public HashMap<String, Grade> getAllGradesAsMap() {
+    public HashMap<String, Grade> getGradesBySemester(int semester) {
         HashMap<String, Grade> map = new HashMap<>();
         Connection conn = DatabaseConnection.getConnection();
-        String sql = "SELECT * FROM grade";
-
+        String sql = "SELECT * FROM grade WHERE semester = ?";
         try {
             PreparedStatement ps = conn.prepareStatement(sql);
+            ps.setInt(1, semester);
             ResultSet rs = ps.executeQuery();
             while(rs.next()){
                 Grade g = new Grade(
                         rs.getString("studentID"),
+                        rs.getInt("semester"),
                         rs.getDouble("regularScore"),
                         rs.getDouble("midtermScore"),
                         rs.getDouble("finalScore")
@@ -94,9 +69,31 @@ public class GradeDatabase {
                 map.put(g.getStudentID(), g);
             }
             conn.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        } catch (Exception e) { e.printStackTrace(); }
         return map;
+    }
+
+    // --- 2. HÀM CŨ (MẶC ĐỊNH KỲ 1) - Dùng cho AddGrade, EditGrade cũ ---
+    // Giúp sửa lỗi "no suitable method found"
+
+    public void addOrUpdateGrade(Grade g) {
+        // Mặc định lưu vào kỳ 1 nếu gọi hàm cũ
+        addOrUpdateGrade(g.getStudentID(), 1, g.getRegularScore(), g.getMidtermScore(), g.getFinalScore());
+    }
+
+    public Grade getGradeByStudentID(String id) {
+        return getGrade(id, 1); // Mặc định lấy kỳ 1
+    }
+
+    public HashMap<String, Grade> getAllGradesAsMap() {
+        return getGradesBySemester(1);
+    }
+
+    public void deleteGrade(String id) {
+        try {
+            Connection conn = DatabaseConnection.getConnection();
+            conn.createStatement().executeUpdate("DELETE FROM grade WHERE studentID='" + id + "'");
+            conn.close();
+        } catch(Exception e) {}
     }
 }

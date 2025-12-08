@@ -219,14 +219,6 @@ public class Settings extends JFrame {
         lblDanger.setFont(new Font("Segoe UI", Font.BOLD, 15));
         lblDanger.setForeground(dangerColor);
 
-        JLabel lblDangerDesc = new JLabel("Hành động này không thể hoàn tác. Mọi dữ liệu sẽ bị xóa.");
-        lblDangerDesc.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        lblDangerDesc.setForeground(grayText);
-
-        JPanel textPanel = new JPanel(new GridLayout(2, 1));
-        textPanel.setOpaque(false);
-        textPanel.add(lblDanger);
-        textPanel.add(lblDangerDesc);
 
         btnDeleteAccount = new JButton("Xóa tài khoản");
         btnDeleteAccount.setFont(new Font("Segoe UI", Font.BOLD, 13));
@@ -236,7 +228,6 @@ public class Settings extends JFrame {
         btnDeleteAccount.setCursor(new Cursor(Cursor.HAND_CURSOR));
         btnDeleteAccount.addActionListener(e -> handleDeleteAccount());
 
-        deletePanel.add(textPanel, BorderLayout.CENTER);
         deletePanel.add(btnDeleteAccount, BorderLayout.EAST);
 
         container.add(deletePanel);

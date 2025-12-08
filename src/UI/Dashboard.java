@@ -2,18 +2,22 @@ package UI;
 
 import AccountManager.Account;
 import Database.ClassDatabase;
-import GradeManager.Grade;
+    import GradeManager.Grade;
 import Database.GradeDatabase;
 import GradeManager.service.DashboardService;
 import StudentManager.Student;
 import Database.StudentDatabase;
 
+import javax.swing.border.CompoundBorder;
+import javax.swing.table.DefaultTableModel;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
+
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.ArrayList;
 
 public class Dashboard extends JFrame {
     private JPanel mainPanel;
@@ -213,102 +217,127 @@ public class Dashboard extends JFrame {
 
     // ================= 2. GIAO DIỆN HỌC SINH (MỚI) =================
     private JPanel createStudentDashboard() {
-        JPanel content = new JPanel(null);
+        JPanel content = new JPanel(new BorderLayout());
         content.setBackground(bgColor);
+        content.setBorder(new EmptyBorder(20, 20, 20, 20));
 
-        JLabel lblTitle = new JLabel("Hồ sơ cá nhân");
-        lblTitle.setFont(fontTitle);
-        lblTitle.setForeground(textColor);
-        lblTitle.setBounds(40, 40, 400, 40);
-        content.add(lblTitle);
+        // 1. Header: Thông tin học sinh
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.setBackground(cardColor);
+        headerPanel.setBorder(new CompoundBorder(
+                new LineBorder(lineColor),
+                new EmptyBorder(15, 20, 15, 20)
+        ));
 
-        // Lấy thông tin học sinh
-        String studentID = currentAccount.getID();
+        String studentID = currentAccount.getID(); // Username chính là Mã HS
         Student s = studentDB.findByID(studentID);
-        Grade g = gradeDB.getGradeByStudentID(studentID);
 
-        if (s == null) {
-            JLabel lblError = new JLabel("Chưa tìm thấy thông tin hồ sơ cho tài khoản này!");
-            lblError.setFont(fontHead);
-            lblError.setForeground(Color.RED);
-            lblError.setBounds(40, 100, 500, 30);
-            content.add(lblError);
-            return content;
+        if (s != null) {
+            JLabel lblHello = new JLabel("Xin chào, " + s.getStudentName());
+            lblHello.setFont(new Font("Segoe UI", Font.BOLD, 20));
+            lblHello.setForeground(primaryColor);
+
+            JLabel lblInfo = new JLabel("Mã số: " + s.getStudentID() + "  |  Lớp: " + s.getStudentClass());
+            lblInfo.setFont(fontText);
+            lblInfo.setForeground(grayText);
+
+            headerPanel.add(lblHello, BorderLayout.NORTH);
+            headerPanel.add(lblInfo, BorderLayout.CENTER);
         }
 
-        // --- THẺ THÔNG TIN CÁ NHÂN ---
-        JPanel infoCard = new JPanel(null);
-        infoCard.setBounds(40, 100, 400, 250);
-        infoCard.setBackground(cardColor);
-        infoCard.setBorder(BorderFactory.createMatteBorder(4, 0, 0, 0, primaryColor)); // Viền trên màu xanh
+        content.add(headerPanel, BorderLayout.NORTH);
 
-        JLabel lblName = new JLabel(s.getStudentName());
-        lblName.setFont(new Font("Segoe UI", Font.BOLD, 22));
-        lblName.setForeground(primaryColor);
-        lblName.setBounds(30, 20, 350, 40);
-        infoCard.add(lblName);
+        // 2. Tabbed Pane cho 2 Học kỳ
+        JTabbedPane tabbedPane = new JTabbedPane();
+        tabbedPane.setFont(fontHead);
+        tabbedPane.setBackground(bgColor);
 
-        addInfoRow(infoCard, "Mã học sinh:", s.getStudentID(), 70);
-        addInfoRow(infoCard, "Lớp:", s.getStudentClass(), 110);
-        addInfoRow(infoCard, "Giới tính:", s.getGender(), 150);
-        addInfoRow(infoCard, "Trạng thái:", "Đang học", 190);
+        // Tạo bảng điểm cho HK1
+        tabbedPane.addTab("Học kỳ 1", createSemesterPanel(studentID, 1));
+        // Tạo bảng điểm cho HK2
+        tabbedPane.addTab("Học kỳ 2", createSemesterPanel(studentID, 2));
 
-        content.add(infoCard);
-
-        // --- THẺ ĐIỂM SỐ ---
-        JPanel scoreCard = new JPanel(null);
-        scoreCard.setBounds(480, 100, 500, 250);
-        scoreCard.setBackground(cardColor);
-        scoreCard.setBorder(BorderFactory.createMatteBorder(4, 0, 0, 0, Color.decode("#10B981"))); // Viền trên màu xanh lá
-
-        JLabel lblScoreTitle = new JLabel("Kết quả học tập");
-        lblScoreTitle.setFont(new Font("Segoe UI", Font.BOLD, 20));
-        lblScoreTitle.setForeground(textColor);
-        lblScoreTitle.setBounds(30, 20, 300, 40);
-        scoreCard.add(lblScoreTitle);
-
-        if (g != null) {
-            // Hiển thị 3 cột điểm
-            addScoreBox(scoreCard, "Thường xuyên", String.valueOf(g.getRegularScore()), 30, 80);
-            addScoreBox(scoreCard, "Giữa kỳ", String.valueOf(g.getMidtermScore()), 180, 80);
-            addScoreBox(scoreCard, "Cuối kỳ", String.valueOf(g.getFinalScore()), 330, 80);
-
-            // Điểm tổng kết to đùng
-            JLabel lblAvgTitle = new JLabel("Điểm Trung Bình:");
-            lblAvgTitle.setFont(fontText);
-            lblAvgTitle.setForeground(grayText);
-            lblAvgTitle.setBounds(30, 180, 150, 30);
-            scoreCard.add(lblAvgTitle);
-
-            JLabel lblAvg = new JLabel(String.format("%.2f", g.getAverage()));
-            lblAvg.setFont(new Font("Segoe UI", Font.BOLD, 36));
-            lblAvg.setForeground(primaryColor);
-            lblAvg.setBounds(150, 170, 150, 45);
-            scoreCard.add(lblAvg);
-
-            // Xếp loại
-            DashboardService service = new DashboardService(); // Mượn logic xếp loại nếu có, hoặc tự tính
-            // Ở đây mình tạm dùng logic đơn giản để demo
-            String rank = (g.getAverage() >= 8) ? "Giỏi" : (g.getAverage() >= 6.5) ? "Khá" : "Trung bình";
-            JLabel lblRank = new JLabel(rank);
-            lblRank.setOpaque(true);
-            lblRank.setBackground(rank.equals("Giỏi") ? Color.decode("#D1FAE5") : Color.decode("#FEF3C7"));
-            lblRank.setForeground(rank.equals("Giỏi") ? Color.decode("#065F46") : Color.decode("#92400E"));
-            lblRank.setFont(new Font("Segoe UI", Font.BOLD, 14));
-            lblRank.setHorizontalAlignment(SwingConstants.CENTER);
-            lblRank.setBounds(330, 180, 100, 30);
-            scoreCard.add(lblRank);
-
-        } else {
-            JLabel lblNoScore = new JLabel("Chưa có dữ liệu điểm số.");
-            lblNoScore.setFont(fontText);
-            lblNoScore.setBounds(30, 80, 300, 30);
-            scoreCard.add(lblNoScore);
-        }
-
-        content.add(scoreCard);
+        content.add(tabbedPane, BorderLayout.CENTER);
 
         return content;
+    }
+
+    // Hàm tạo giao diện bảng điểm cho từng kỳ
+    private JPanel createSemesterPanel(String studentID, int semester) {
+        JPanel panel = new JPanel(new BorderLayout(0, 10));
+        panel.setBackground(bgColor);
+        panel.setBorder(new EmptyBorder(10, 0, 0, 0));
+
+        // Lấy dữ liệu từ Database
+        ArrayList<Object[]> transcript = gradeDB.getStudentTranscript(studentID, semester);
+
+        // Column Names
+        String[] columns = {"Môn học", "Hệ số", "Đ.TX", "Đ.GK", "Đ.CK", "ĐTB Môn", "Xếp loại"};
+        DefaultTableModel model = new DefaultTableModel(columns, 0);
+
+        double totalScore = 0;
+        int totalCoeff = 0;
+
+        for (Object[] row : transcript) {
+            String subName = (String) row[0];
+            int coeff = (int) row[1];
+            double r = (double) row[2];
+            double m = (double) row[3];
+            double f = (double) row[4];
+
+            // Tính ĐTB Môn: (TX + 2*GK + 3*CK) / 6
+            double avgSub = (r + m*2 + f*3) / 6.0;
+
+            // Cộng dồn để tính ĐTB Học kỳ
+            totalScore += avgSub * coeff;
+            totalCoeff += coeff;
+
+            model.addRow(new Object[]{
+                    subName, coeff, r, m, f,
+                    String.format("%.2f", avgSub),
+                    classify(avgSub)
+            });
+        }
+
+        // Tạo bảng
+        JTable table = new JTable(model);
+        table.setRowHeight(35);
+        table.setFont(fontText);
+        table.getTableHeader().setFont(fontHead);
+        table.getTableHeader().setBackground(Color.decode("#E0E7FF"));
+        table.setEnabled(false); // Chỉ xem, không sửa
+
+        JScrollPane scroll = new JScrollPane(table);
+        scroll.setBorder(new LineBorder(lineColor));
+        panel.add(scroll, BorderLayout.CENTER);
+
+        // Footer: Hiển thị Tổng kết học kỳ
+        JPanel footer = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        footer.setBackground(cardColor);
+        footer.setBorder(new LineBorder(lineColor));
+
+        double semesterAvg = (totalCoeff > 0) ? (totalScore / totalCoeff) : 0;
+
+        JLabel lblAvg = new JLabel("ĐIỂM TRUNG BÌNH HỌC KỲ " + semester + ":  " + String.format("%.2f", semesterAvg));
+        lblAvg.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        lblAvg.setForeground(primaryColor);
+
+        JLabel lblRank = new JLabel("  [" + classify(semesterAvg) + "]  ");
+        lblRank.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        lblRank.setForeground(Color.decode("#EF4444")); // Đỏ
+
+        footer.add(lblAvg);
+        footer.add(lblRank);
+        panel.add(footer, BorderLayout.SOUTH);
+
+        return panel;
+    }
+
+    private String classify(double score) {
+        if (score >= 8.0) return "Giỏi";
+        if (score >= 6.5) return "Khá";
+        if (score >= 5.0) return "Trung bình";
+        return "Yếu";
     }
 
     private void addInfoRow(JPanel p, String label, String value, int y) {

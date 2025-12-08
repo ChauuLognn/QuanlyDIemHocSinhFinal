@@ -2,6 +2,7 @@ package Database;
 
 import GradeManager.Grade;
 import java.sql.*;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 public class GradeDatabase {
@@ -129,4 +130,38 @@ public class GradeDatabase {
             conn.close();
         } catch(Exception e) {}
     }
+
+
+    // Lấy bảng điểm đầy đủ của 1 học sinh trong 1 kỳ (Kèm tên môn và hệ số)
+    // Trả về danh sách Object[] gồm: {Tên Môn, Hệ Số, TX, GK, CK}
+    public ArrayList<Object[]> getStudentTranscript(String studentID, int semester) {
+        ArrayList<Object[]> list = new ArrayList<>();
+        try {
+            Connection conn = DatabaseConnection.getConnection();
+            // Join bảng Grade và Subject để lấy tên môn
+            String sql = "SELECT s.subjectName, s.coefficient, g.regularScore, g.midtermScore, g.finalScore " +
+                    "FROM grade g " +
+                    "JOIN subject s ON g.subjectID = s.subjectID " +
+                    "WHERE g.studentID = ? AND g.semester = ?";
+
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ps.setString(1, studentID);
+            ps.setInt(2, semester);
+            ResultSet rs = ps.executeQuery();
+
+            while(rs.next()){
+                list.add(new Object[]{
+                        rs.getString("subjectName"),
+                        rs.getInt("coefficient"),
+                        rs.getDouble("regularScore"),
+                        rs.getDouble("midtermScore"),
+                        rs.getDouble("finalScore")
+                });
+            }
+            conn.close();
+        } catch (Exception e) { e.printStackTrace(); }
+        return list;
+    }
+
+
 }

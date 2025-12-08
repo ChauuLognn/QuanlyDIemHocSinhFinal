@@ -97,7 +97,6 @@ public class ReportManagement extends JFrame {
         panel.add(createLabel("Loại báo cáo"));
         cboReportType = createComboBox(new String[]{
                 "Danh sách lớp (Class List)", "Bảng điểm tổng kết",
-                "Danh sách học sinh giỏi", "Phiếu liên lạc cá nhân"
         });
         panel.add(cboReportType);
         panel.add(Box.createRigidArea(new Dimension(0, 20)));

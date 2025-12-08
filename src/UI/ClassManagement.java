@@ -2,7 +2,7 @@ package UI;
 
 import AccountManager.Account;
 import ClassManager.Classes;
-import ClassManager.data.ClassDatabase;
+import Database.ClassDatabase;
 import ClassManager.service.AddClass;
 import ClassManager.service.DeleteClass;
 import ClassManager.service.EditClass;

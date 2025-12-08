@@ -1,7 +1,7 @@
 package AccountManager.service;
 
 import AccountManager.Account;
-import AccountManager.data.AccountDatabase;
+import Database.AccountDatabase;
 
 public class AuthService {
     private AccountDatabase accountDB = AccountDatabase.getAccountDB();

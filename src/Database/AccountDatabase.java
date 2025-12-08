@@ -1,7 +1,6 @@
-package AccountManager.data;
+package Database;
 
 import AccountManager.Account;
-import Database.DatabaseConnection;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;

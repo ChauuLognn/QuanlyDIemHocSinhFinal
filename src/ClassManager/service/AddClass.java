@@ -1,7 +1,7 @@
 package ClassManager.service;
 
 import ClassManager.Classes;
-import ClassManager.data.ClassDatabase;
+import Database.ClassDatabase;
 
 public class AddClass {
     private ClassDatabase classDB = ClassDatabase.getClassDB();

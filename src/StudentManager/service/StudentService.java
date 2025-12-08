@@ -1,9 +1,9 @@
 package StudentManager.service;
 
 import GradeManager.Grade;
-import GradeManager.data.GradeDatabase;
+import Database.GradeDatabase;
 import StudentManager.Student;
-import StudentManager.data.StudentDatabase;
+import Database.StudentDatabase;
 import java.util.*;
 
 public class StudentService {

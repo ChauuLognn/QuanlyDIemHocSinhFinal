@@ -1,6 +1,5 @@
-package StudentManager.data;
+package Database;
 
-import Database.DatabaseConnection;
 import StudentManager.Student;
 import java.sql.*;
 import java.util.ArrayList;

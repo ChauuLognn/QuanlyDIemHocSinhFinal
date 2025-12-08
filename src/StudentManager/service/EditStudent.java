@@ -1,8 +1,8 @@
 package StudentManager.service;
 
 import StudentManager.Student;
-import StudentManager.data.StudentDatabase;
-import ClassManager.data.ClassDatabase;
+import Database.StudentDatabase;
+import Database.ClassDatabase;
 
 public class EditStudent {
     private StudentDatabase studentDB = StudentDatabase.getStudentDB();

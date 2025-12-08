@@ -1,8 +1,8 @@
 package StudentManager.service;
 
 import StudentManager.Student;
-import StudentManager.data.StudentDatabase;
-import ClassManager.data.ClassDatabase;
+import Database.StudentDatabase;
+import Database.ClassDatabase;
 import Exception.Validator;
 import Exception.InvalidIDException;
 import Exception.InvalidNameException;

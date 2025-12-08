@@ -1,6 +1,6 @@
 package GradeManager.service;
 
-import GradeManager.data.GradeDatabase;
+import Database.GradeDatabase;
 
 public class DeleteGrade {
     private GradeDatabase gradeDB = GradeDatabase.getGradeDB();

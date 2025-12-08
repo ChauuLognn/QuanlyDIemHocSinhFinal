@@ -1,12 +1,12 @@
 package UI;
 
 import AccountManager.Account;
-import ClassManager.data.ClassDatabase;
+import Database.ClassDatabase;
 import GradeManager.Grade;
-import GradeManager.data.GradeDatabase;
+import Database.GradeDatabase;
 import GradeManager.service.DashboardService;
 import StudentManager.Student;
-import StudentManager.data.StudentDatabase;
+import Database.StudentDatabase;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;

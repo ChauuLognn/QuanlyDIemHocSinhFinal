@@ -1,6 +1,6 @@
 package ClassManager.service;
 
-import ClassManager.data.ClassDatabase;
+import Database.ClassDatabase;
 
 public class DeleteClass {
     private ClassDatabase classDB = ClassDatabase.getClassDB();

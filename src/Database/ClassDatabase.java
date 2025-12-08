@@ -1,7 +1,7 @@
-package ClassManager.data;
+package Database;
 
 import ClassManager.Classes;
-import Database.DatabaseConnection;
+
 import java.sql.*;
 import java.util.ArrayList;
 

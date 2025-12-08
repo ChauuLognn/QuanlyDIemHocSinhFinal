@@ -2,7 +2,7 @@ package GradeManager.service;
 
 import Exception.InvalidScoreException;
 import Exception.Validator;
-import GradeManager.data.GradeDatabase;
+import Database.GradeDatabase;
 
 public class AddGrade {
     private GradeDatabase gradeDB = GradeDatabase.getGradeDB();

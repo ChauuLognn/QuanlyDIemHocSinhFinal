@@ -1,6 +1,6 @@
 package AccountManager.service;
 
-import AccountManager.data.AccountDatabase;
+import Database.AccountDatabase;
 
 public class EditAccount {
     private AccountDatabase accountDB = AccountDatabase.getAccountDB();

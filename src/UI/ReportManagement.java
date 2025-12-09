@@ -1,209 +1,121 @@
 package UI;
 
 import AccountManager.Account;
-import Database.DatabaseConnection;
-import ReportManager.service.ReportService;
+import ClassManager.Classes;
+import Database.ClassDatabase;
+import Database.SubjectDatabase;
+import ReportManager.ReportService;
+import SubjectManager.Subject;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.io.File;
-import java.sql.*;
+import java.util.ArrayList;
 
 public class ReportManagement extends JFrame {
     private Account currentAccount;
+    private ReportService reportService = new ReportService();
 
-    private final Color primaryColor = Color.decode("#1E40AF");
-    private final Color bgColor      = Color.decode("#F3F4F6");
-    private final Color cardColor    = Color.WHITE;
-    private final Color textColor    = Color.decode("#111827");
-    private final Color grayText     = Color.decode("#6B7280");
-    private final Color lineColor    = Color.decode("#E5E7EB");
-
-    private JComboBox<String> cboReportType, cboClass, cboSemester;
-    private JTextArea txtPreview;
+    private JComboBox<String> cboClass;
+    private JComboBox<Subject> cboSubject;
+    private JComboBox<String> cboSemester;
 
     public ReportManagement(Account account) {
         this.currentAccount = account;
-        setTitle("Xuất Báo Cáo");
-        setSize(1400, 850);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setTitle("Xuất Báo Cáo & Thống Kê");
+        setSize(600, 450);
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE); // Chỉ đóng cửa sổ này, không tắt app
         setLocationRelativeTo(null);
         setLayout(new BorderLayout());
 
-        add(createTopBar(), BorderLayout.NORTH);
+        // Header
+        JLabel lblTitle = new JLabel("XUẤT BÁO CÁO HỆ THỐNG", JLabel.CENTER);
+        lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 20));
+        lblTitle.setForeground(Color.decode("#1E40AF"));
+        lblTitle.setBorder(new EmptyBorder(20, 0, 20, 0));
+        add(lblTitle, BorderLayout.NORTH);
 
-        JPanel mainPanel = new JPanel(new BorderLayout(25, 0));
-        mainPanel.setBackground(bgColor);
-        mainPanel.setBorder(new EmptyBorder(30, 30, 30, 30));
+        // Main Content
+        JPanel mainPanel = new JPanel(new GridLayout(4, 2, 20, 20));
+        mainPanel.setBorder(new EmptyBorder(20, 40, 20, 40));
+        mainPanel.setBackground(Color.WHITE);
 
-        mainPanel.add(createConfigPanel(), BorderLayout.WEST);
-        mainPanel.add(createPreviewPanel(), BorderLayout.CENTER);
+        // 1. Chọn Lớp
+        mainPanel.add(createLabel("Chọn Lớp học:"));
+        cboClass = new JComboBox<>();
+        loadClasses();
+        mainPanel.add(cboClass);
+
+        // 2. Chọn Môn (Chỉ dùng khi xuất bảng điểm)
+        mainPanel.add(createLabel("Chọn Môn học:"));
+        cboSubject = new JComboBox<>();
+        loadSubjects();
+        mainPanel.add(cboSubject);
+
+        // 3. Chọn Học kỳ
+        mainPanel.add(createLabel("Chọn Học kỳ:"));
+        cboSemester = new JComboBox<>(new String[]{"Học kỳ 1", "Học kỳ 2"});
+        mainPanel.add(cboSemester);
 
         add(mainPanel, BorderLayout.CENTER);
-    }
 
-    private JPanel createTopBar() {
-        JPanel navbar = new JPanel(new BorderLayout());
-        navbar.setPreferredSize(new Dimension(0, 60));
-        navbar.setBackground(cardColor);
-        navbar.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, lineColor));
+        // Footer (Buttons)
+        JPanel footer = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 20));
 
-        JLabel title = new JLabel("  XUẤT BÁO CÁO");
-        title.setFont(new Font("Segoe UI", Font.BOLD, 20));
-        title.setForeground(primaryColor);
-        title.setBorder(new EmptyBorder(0, 15, 0, 0));
-        navbar.add(title, BorderLayout.WEST);
-
-        JButton btnBack = new JButton("← Dashboard");
-        btnBack.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        btnBack.setForeground(grayText);
-        btnBack.setBackground(cardColor);
-        btnBack.setBorder(new EmptyBorder(0, 15, 0, 15));
-        btnBack.setFocusPainted(false);
-        btnBack.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btnBack.addMouseListener(new MouseAdapter() {
-            public void mouseEntered(MouseEvent e) { btnBack.setForeground(primaryColor); }
-            public void mouseExited(MouseEvent e) { btnBack.setForeground(grayText); }
-        });
-        btnBack.addActionListener(e -> {
-            this.dispose();
-            new Dashboard(currentAccount).setVisible(true);
+        JButton btnExportList = createButton("Xuất Danh Sách Lớp", Color.decode("#059669"));
+        btnExportList.addActionListener(e -> {
+            String classID = cboClass.getSelectedItem().toString().split(" - ")[0]; // Lấy mã lớp
+            reportService.exportClassList(classID);
         });
 
-        navbar.add(btnBack, BorderLayout.EAST);
-        return navbar;
-    }
+        JButton btnExportScore = createButton("Xuất Bảng Điểm Môn", Color.decode("#2563EB"));
+        btnExportScore.addActionListener(e -> {
+            String classID = cboClass.getSelectedItem().toString().split(" - ")[0];
+            Subject sub = (Subject) cboSubject.getSelectedItem();
+            int semester = cboSemester.getSelectedIndex() + 1;
 
-    private JPanel createConfigPanel() {
-        JPanel panel = new JPanel();
-        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-        panel.setBackground(cardColor);
-        panel.setPreferredSize(new Dimension(350, 0));
-        panel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(lineColor),
-                new EmptyBorder(30, 30, 30, 30)
-        ));
-
-        JLabel lblTitle = new JLabel("CẤU HÌNH");
-        lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        lblTitle.setForeground(primaryColor);
-        lblTitle.setAlignmentX(Component.LEFT_ALIGNMENT);
-        panel.add(lblTitle);
-        panel.add(Box.createRigidArea(new Dimension(0, 25)));
-
-        panel.add(createLabel("Loại báo cáo"));
-        cboReportType = createComboBox(new String[]{
-                "Danh sách lớp (Class List)", "Bảng điểm tổng kết",
+            reportService.exportScoreBoard(classID, sub.getId(), semester);
         });
-        panel.add(cboReportType);
-        panel.add(Box.createRigidArea(new Dimension(0, 20)));
 
-        panel.add(createLabel("Chọn lớp"));
-        cboClass = createComboBox(new String[]{"Tất cả"});
-        loadClassList();
-        panel.add(cboClass);
-        panel.add(Box.createRigidArea(new Dimension(0, 20)));
+        JButton btnBack = createButton("Thoát", Color.decode("#6B7280"));
+        btnBack.addActionListener(e -> this.dispose());
 
-        panel.add(createLabel("Học kỳ"));
-        cboSemester = createComboBox(new String[]{"Học kỳ 1", "Học kỳ 2", "Cả năm"});
-        panel.add(cboSemester);
+        footer.add(btnExportList);
+        footer.add(btnExportScore);
+        footer.add(btnBack);
 
-        panel.add(Box.createVerticalGlue());
-
-        // Buttons
-        JButton btnPreview = createButton("Xem trước", Color.decode("#3B82F6"));
-        btnPreview.addActionListener(e -> generatePreview());
-        panel.add(btnPreview);
-        panel.add(Box.createRigidArea(new Dimension(0, 15)));
-
-        JButton btnExport = createButton("Xuất Excel (.csv)", Color.decode("#10B981"));
-        btnExport.addActionListener(e -> exportToExcel());
-        panel.add(btnExport);
-
-        return panel;
+        add(footer, BorderLayout.SOUTH);
     }
 
-    private JPanel createPreviewPanel() {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(cardColor);
-        panel.setBorder(BorderFactory.createLineBorder(lineColor));
+    // --- Helper Methods ---
 
-        JLabel lblHeader = new JLabel("  BẢN XEM TRƯỚC");
-        lblHeader.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        lblHeader.setForeground(grayText);
-        lblHeader.setPreferredSize(new Dimension(0, 50));
-        lblHeader.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, lineColor));
-        panel.add(lblHeader, BorderLayout.NORTH);
+    private void loadClasses() {
+        ArrayList<Classes> list = ClassDatabase.getClassDB().getAllClasses();
+        for (Classes c : list) {
+            // Hiển thị dạng "9A1 - Lớp 9A1" để dễ nhìn
+            cboClass.addItem(c.getClassID() + " - " + c.getClassName());
+        }
+    }
 
-        txtPreview = new JTextArea();
-        txtPreview.setFont(new Font("Consolas", Font.PLAIN, 14));
-        txtPreview.setEditable(false);
-        txtPreview.setMargin(new Insets(25, 25, 25, 25));
-        txtPreview.setText("Vui lòng chọn cấu hình và bấm 'Xem trước'...");
-
-        JScrollPane scroll = new JScrollPane(txtPreview);
-        scroll.setBorder(null);
-        panel.add(scroll, BorderLayout.CENTER);
-
-        return panel;
+    private void loadSubjects() {
+        for (Subject s : SubjectDatabase.getAllSubjects()) {
+            cboSubject.addItem(s);
+        }
     }
 
     private JLabel createLabel(String text) {
         JLabel lbl = new JLabel(text);
-        lbl.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        lbl.setForeground(grayText);
-        lbl.setAlignmentX(Component.LEFT_ALIGNMENT);
+        lbl.setFont(new Font("Segoe UI", Font.BOLD, 14));
         return lbl;
     }
 
-    private JComboBox<String> createComboBox(String[] items) {
-        JComboBox<String> box = new JComboBox<>(items);
-        box.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        box.setBackground(Color.WHITE);
-        box.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
-        box.setAlignmentX(Component.LEFT_ALIGNMENT);
-        return box;
-    }
-
-    private JButton createButton(String text, Color color) {
+    private JButton createButton(String text, Color bg) {
         JButton btn = new JButton(text);
         btn.setFont(new Font("Segoe UI", Font.BOLD, 14));
         btn.setForeground(Color.WHITE);
-        btn.setBackground(color);
-        btn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 45));
-        btn.setAlignmentX(Component.LEFT_ALIGNMENT);
+        btn.setBackground(bg);
         btn.setFocusPainted(false);
-        btn.setBorderPainted(false);
-        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btn.setPreferredSize(new Dimension(180, 40));
         return btn;
-    }
-
-    private void loadClassList() {
-        try (Connection con = DatabaseConnection.getConnection(); Statement stmt = con.createStatement(); ResultSet rs = stmt.executeQuery("SELECT className FROM classes")) {
-            while (rs.next()) cboClass.addItem(rs.getString("className"));
-        } catch (Exception ignored) {}
-    }
-
-    private void generatePreview() {
-        ReportService service = new ReportService();
-        String content = service.generateReportContent((String) cboReportType.getSelectedItem(), (String) cboClass.getSelectedItem(), (String) cboSemester.getSelectedItem());
-        txtPreview.setText(content);
-        txtPreview.setCaretPosition(0);
-    }
-
-    private void exportToExcel() {
-        JFileChooser fc = new JFileChooser();
-        fc.setSelectedFile(new File("BaoCao_" + System.currentTimeMillis() + ".csv"));
-        if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
-            try {
-                ReportService service = new ReportService();
-                String content = service.generateCSVContent((String) cboReportType.getSelectedItem(), (String) cboClass.getSelectedItem(), (String) cboSemester.getSelectedItem());
-                service.saveReportToFile(fc.getSelectedFile(), content);
-                JOptionPane.showMessageDialog(this, "Xuất file thành công!");
-            } catch (Exception e) { JOptionPane.showMessageDialog(this, "Lỗi: " + e.getMessage()); }
-        }
     }
 }

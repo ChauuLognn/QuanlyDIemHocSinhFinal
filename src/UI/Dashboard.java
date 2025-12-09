@@ -207,10 +207,6 @@ public class Dashboard extends JFrame {
         return content;
     }
 
-// phần 2 tiếp tục...
-
-// tiếp phần 1
-
     private JPanel createStudentDashboard() {
         JPanel content = new JPanel(new BorderLayout());
         content.setBackground(bgColor);

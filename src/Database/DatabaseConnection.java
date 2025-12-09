@@ -6,8 +6,8 @@ import java.sql.DriverManager;
 public class DatabaseConnection {
     // Cấu hình cho MySQL Localhost
     private static final String URL = "jdbc:mysql://localhost:3306/QuanLyHocSinhDB";
-    private static final String USER = "root";   // Mặc định XAMPP là root
-    private static final String PASS = "1011";       // Mặc định XAMPP không có pass (nếu bạn có cài pass thì điền vào)
+    private static final String USER = "root";
+    private static final String PASS = "1011";
 
     public static Connection getConnection() {
         Connection cons = null;

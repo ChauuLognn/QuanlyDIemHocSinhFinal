@@ -46,11 +46,11 @@ public class GradeDatabase {
         try {
             Connection conn = DatabaseConnection.getConnection();
             String sql = "INSERT INTO grade (studentID, subjectID, semester, regularScore, midtermScore, finalScore) " +
-                    "VALUES (?, ?, ?, ?, ?, ?) AS new " +
+                    "VALUES (?, ?, ?, ?, ?, ?) " +
                     "ON DUPLICATE KEY UPDATE " +
-                    "regularScore = new.regularScore, " +
-                    "midtermScore = new.midtermScore, " +
-                    "finalScore = new.finalScore";
+                    "regularScore = VALUES(regularScore), " +
+                    "midtermScore = VALUES(midtermScore), " +
+                    "finalScore = VALUES(finalScore)";
 
             PreparedStatement ps = conn.prepareStatement(sql);
             ps.setString(1, studentID);
@@ -71,7 +71,9 @@ public class GradeDatabase {
     public void deleteGrade(String studentID) {
         try {
             Connection conn = DatabaseConnection.getConnection();
-            conn.createStatement().executeUpdate("DELETE FROM grade WHERE studentID='" + studentID + "'");
+            PreparedStatement ps = conn.prepareStatement("DELETE FROM grade WHERE studentID = ?");
+            ps.setString(1, studentID);
+            ps.executeUpdate();
             conn.close();
         } catch(Exception e) {
             e.printStackTrace();

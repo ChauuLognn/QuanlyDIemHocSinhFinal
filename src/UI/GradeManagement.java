@@ -422,24 +422,40 @@ public class GradeManagement extends JFrame {
     }
 
     private void saveGrade() {
+        // 1. Kiểm tra đã chọn học sinh chưa
         if (txtId.getText().isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Chưa chọn học sinh!");
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn một học sinh trong bảng!", "Lỗi", JOptionPane.ERROR_MESSAGE);
             return;
         }
+
         try {
+            // 2. Lấy điểm từ ô nhập
             double r = Double.parseDouble(txtRegular.getText());
             double m = Double.parseDouble(txtMid.getText());
             double f = Double.parseDouble(txtFinal.getText());
-            int semester = cboSemester.getSelectedIndex() + 1;
-            Subject sub = (Subject) cboSubject.getSelectedItem(); // NOTE: Lấy môn học
 
-            // NOTE: Gọi hàm lưu điểm có subjectID
+            // 3. (MỚI) KIỂM TRA ĐIỂM HỢP LỆ (0 <= điểm <= 10)
+            if (r < 0 || r > 10 || m < 0 || m > 10 || f < 0 || f > 10) {
+                JOptionPane.showMessageDialog(this, "Điểm số phải nằm trong khoảng từ 0 đến 10!", "Sai dữ liệu", JOptionPane.WARNING_MESSAGE);
+                return; // Dừng lại, không lưu
+            }
+
+            // 4. Lấy các thông tin khác
+            int semester = cboSemester.getSelectedIndex() + 1;
+            Subject sub = (Subject) cboSubject.getSelectedItem(); // Lấy môn
+
+            // 5. Lưu vào Database
             GradeDatabase.getGradeDB().saveGrade(txtId.getText(), sub.getId(), semester, r, m, f);
 
+            // 6. Tải lại bảng và thông báo
             loadDataFromDatabase();
             JOptionPane.showMessageDialog(this, "Lưu điểm thành công!");
+
+        } catch (NumberFormatException e) {
+            // Chặn lỗi nhập chữ cái thay vì số
+            JOptionPane.showMessageDialog(this, "Vui lòng nhập đúng định dạng số!", "Lỗi nhập liệu", JOptionPane.ERROR_MESSAGE);
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Lỗi nhập liệu: " + e.getMessage());
+            JOptionPane.showMessageDialog(this, "Lỗi hệ thống: " + e.getMessage());
         }
     }
 

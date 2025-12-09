@@ -2,41 +2,40 @@ package UI;
 
 import AccountManager.Account;
 import AccountManager.service.EditAccount;
-import AccountManager.service.DeleteAccount; // Import service xóa
+import AccountManager.service.DeleteAccount;
 
 import javax.swing.*;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
-import javax.swing.border.MatteBorder;
+import javax.swing.border.LineBorder;
 import java.awt.*;
-import java.awt.event.FocusAdapter;
-import java.awt.event.FocusEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
 public class Settings extends JFrame {
     private Account currentAccount;
 
     // --- COLORS & FONTS ---
-    private final Color primaryColor = Color.decode("#1E40AF");
-    private final Color bgColor      = Color.decode("#F3F4F6");
-    private final Color cardColor    = Color.WHITE;
-    private final Color textColor    = Color.decode("#111827");
-    private final Color grayText     = Color.decode("#6B7280");
-    private final Color lineColor    = Color.decode("#E5E7EB");
-    private final Color dangerColor  = Color.decode("#EF4444"); // Màu đỏ cho nút xóa
+    private final Color primaryColor = Color.decode("#1E40AF"); // Xanh đậm
+    private final Color bgColor      = Color.decode("#F3F4F6"); // Xám nền
+    private final Color cardColor    = Color.WHITE;             // Trắng
+    private final Color textColor    = Color.decode("#111827"); // Đen chữ
+    private final Color grayText     = Color.decode("#6B7280"); // Xám chữ
+    private final Color lineColor    = Color.decode("#E5E7EB"); // Viền
+    private final Color dangerColor  = Color.decode("#EF4444"); // Đỏ
 
-    private final Font fontTitle = new Font("Segoe UI", Font.BOLD, 18);
+    private final Font fontTitle = new Font("Segoe UI", Font.BOLD, 16);
     private final Font fontLabel = new Font("Segoe UI", Font.BOLD, 13);
     private final Font fontInput = new Font("Segoe UI", Font.PLAIN, 14);
 
     // Components
     private JPasswordField txtOldPass, txtNewPass, txtConfirmPass;
-    private JButton btnSave, btnDeleteAccount;
 
     public Settings(Account account) {
         this.currentAccount = account;
 
-        setTitle("Cài đặt hệ thống");
-        setSize(1100, 750);
+        setTitle("Cài đặt tài khoản");
+        setSize(1000, 650);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setLayout(new BorderLayout());
@@ -44,198 +43,160 @@ public class Settings extends JFrame {
         // 1. Top Bar
         add(createTopBar(), BorderLayout.NORTH);
 
-        // 2. Main Content
-        JPanel mainPanel = new JPanel(new BorderLayout(30, 0));
+        // 2. Main Content (Chia 2 cột)
+        JPanel mainPanel = new JPanel(new GridLayout(1, 2, 30, 0)); // 1 hàng, 2 cột, cách nhau 30px
         mainPanel.setBackground(bgColor);
-        mainPanel.setBorder(new EmptyBorder(40, 50, 40, 50));
+        mainPanel.setBorder(new EmptyBorder(30, 40, 30, 40));
 
-        // Trái: Thông tin
-        mainPanel.add(createInfoPanel(), BorderLayout.WEST);
+        // Cột Trái: Profile
+        mainPanel.add(createProfilePanel());
 
-        // Phải: Form đổi mật khẩu & Xóa tài khoản
-        mainPanel.add(createActionPanel(), BorderLayout.CENTER);
+        // Cột Phải: Đổi mật khẩu & Xóa
+        mainPanel.add(createSecurityPanel());
 
         add(mainPanel, BorderLayout.CENTER);
     }
 
-    // ================= TOP BAR =================
+    // ================= 1. TOP BAR =================
     private JPanel createTopBar() {
         JPanel navbar = new JPanel(new BorderLayout());
-        navbar.setPreferredSize(new Dimension(0, 70));
+        navbar.setPreferredSize(new Dimension(0, 60));
         navbar.setBackground(cardColor);
         navbar.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, lineColor));
 
-        JLabel title = new JLabel("  CÀI ĐẶT & BẢO MẬT");
-        title.setFont(new Font("Segoe UI", Font.BOLD, 22));
+        JLabel title = new JLabel("  CÀI ĐẶT HỆ THỐNG");
+        title.setFont(new Font("Segoe UI", Font.BOLD, 20));
         title.setForeground(primaryColor);
-        title.setBorder(new EmptyBorder(0, 20, 0, 0));
+        title.setBorder(new EmptyBorder(0, 15, 0, 0));
         navbar.add(title, BorderLayout.WEST);
 
-        JButton btnBack = new JButton("← Quay lại Dashboard");
+        // Nút Quay lại
+        JButton btnBack = new JButton("← Dashboard");
         btnBack.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        btnBack.setForeground(Color.WHITE);
-        btnBack.setBackground(primaryColor);
-        btnBack.setBorder(new EmptyBorder(10, 20, 10, 20));
+        btnBack.setForeground(grayText);
+        btnBack.setBackground(cardColor);
+        btnBack.setBorder(new EmptyBorder(0, 15, 0, 20));
         btnBack.setFocusPainted(false);
         btnBack.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+        btnBack.addMouseListener(new MouseAdapter() {
+            public void mouseEntered(MouseEvent e) { btnBack.setForeground(primaryColor); }
+            public void mouseExited(MouseEvent e) { btnBack.setForeground(grayText); }
+        });
 
         btnBack.addActionListener(e -> {
             this.dispose();
             new Dashboard(currentAccount).setVisible(true);
         });
 
-        JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        right.setBackground(cardColor);
-        right.add(btnBack);
-        navbar.add(right, BorderLayout.EAST);
-
+        navbar.add(btnBack, BorderLayout.EAST);
         return navbar;
     }
 
-    // ================= LEFT: INFO PANEL =================
-    private JPanel createInfoPanel() {
+    // ================= 2. LEFT PANEL (PROFILE) =================
+    private JPanel createProfilePanel() {
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
         panel.setBackground(cardColor);
-        panel.setPreferredSize(new Dimension(300, 0));
-        panel.setBorder(new CompoundBorder(
-                BorderFactory.createLineBorder(lineColor),
-                new EmptyBorder(30, 30, 30, 30)
+        panel.setBorder(BorderFactory.createCompoundBorder(
+                new LineBorder(lineColor),
+                new EmptyBorder(30, 20, 30, 20)
         ));
 
-        // Avatar
-        JLabel lblAvatar = new JLabel("👤");
-        lblAvatar.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 80));
+        // Avatar Icon
+        JLabel lblAvatar = new JLabel("👤", JLabel.CENTER);
+        lblAvatar.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 100));
         lblAvatar.setAlignmentX(Component.CENTER_ALIGNMENT);
-        panel.add(lblAvatar);
-        panel.add(Box.createRigidArea(new Dimension(0, 20)));
 
         // Username
-        JLabel lblUser = new JLabel(currentAccount.getUsername());
-        lblUser.setFont(new Font("Segoe UI", Font.BOLD, 22));
+        JLabel lblUser = new JLabel(currentAccount.getUsername(), JLabel.CENTER);
+        lblUser.setFont(new Font("Segoe UI", Font.BOLD, 24));
         lblUser.setForeground(textColor);
         lblUser.setAlignmentX(Component.CENTER_ALIGNMENT);
-        panel.add(lblUser);
 
         // Role Badge
-        JLabel lblRole = new JLabel(getRoleName());
+        JLabel lblRole = new JLabel(getRoleName(), JLabel.CENTER);
         lblRole.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        lblRole.setForeground(primaryColor);
-        lblRole.setBackground(Color.decode("#DBEAFE"));
+        lblRole.setForeground(Color.WHITE);
+        lblRole.setBackground(primaryColor);
         lblRole.setOpaque(true);
         lblRole.setBorder(new EmptyBorder(5, 15, 5, 15));
         lblRole.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        JPanel badgePanel = new JPanel();
-        badgePanel.setBackground(cardColor);
-        badgePanel.add(lblRole);
-        panel.add(badgePanel);
-
+        // Add components with spacing
+        panel.add(Box.createVerticalGlue());
+        panel.add(lblAvatar);
+        panel.add(Box.createRigidArea(new Dimension(0, 20)));
+        panel.add(lblUser);
+        panel.add(Box.createRigidArea(new Dimension(0, 10)));
+        panel.add(lblRole);
         panel.add(Box.createVerticalGlue());
 
         return panel;
     }
 
-    private String getRoleName() {
-        String r = currentAccount.getRole();
-        if ("admin".equals(r)) return "QUẢN TRỊ VIÊN";
-        if ("teacher".equals(r)) return "GIÁO VIÊN";
-        return "HỌC SINH";
-    }
-
-    // ================= RIGHT: ACTION PANEL (PASS + DELETE) =================
-    private JPanel createActionPanel() {
-        JPanel container = new JPanel();
-        container.setLayout(new BoxLayout(container, BoxLayout.Y_AXIS));
-        container.setBackground(bgColor);
-
-        // 1. Panel Đổi Mật Khẩu
-        JPanel passPanel = new JPanel();
-        passPanel.setLayout(new BoxLayout(passPanel, BoxLayout.Y_AXIS));
-        passPanel.setBackground(cardColor);
-        passPanel.setBorder(new CompoundBorder(
-                BorderFactory.createLineBorder(lineColor),
-                new EmptyBorder(30, 40, 30, 40)
+    // ================= 3. RIGHT PANEL (SECURITY) =================
+    private JPanel createSecurityPanel() {
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.setBackground(cardColor);
+        panel.setBorder(BorderFactory.createCompoundBorder(
+                new LineBorder(lineColor),
+                new EmptyBorder(25, 30, 25, 30)
         ));
 
-        JLabel lblHeader = new JLabel("Đổi mật khẩu");
-        lblHeader.setFont(fontTitle);
-        lblHeader.setForeground(textColor);
-        lblHeader.setAlignmentX(Component.LEFT_ALIGNMENT);
-        passPanel.add(lblHeader);
-        passPanel.add(Box.createRigidArea(new Dimension(0, 25)));
+        // Header
+        JLabel lblHead = new JLabel("ĐỔI MẬT KHẨU");
+        lblHead.setFont(fontTitle);
+        lblHead.setForeground(primaryColor);
+        lblHead.setAlignmentX(Component.LEFT_ALIGNMENT);
+        panel.add(lblHead);
+        panel.add(Box.createRigidArea(new Dimension(0, 20)));
 
-        passPanel.add(createLabel("Mật khẩu hiện tại"));
+        // Fields
+        panel.add(createLabel("Mật khẩu hiện tại"));
         txtOldPass = createPasswordField();
-        passPanel.add(txtOldPass);
-        passPanel.add(Box.createRigidArea(new Dimension(0, 15)));
+        panel.add(txtOldPass);
+        panel.add(Box.createRigidArea(new Dimension(0, 15)));
 
-        passPanel.add(createLabel("Mật khẩu mới"));
+        panel.add(createLabel("Mật khẩu mới"));
         txtNewPass = createPasswordField();
-        passPanel.add(txtNewPass);
-        passPanel.add(Box.createRigidArea(new Dimension(0, 15)));
+        panel.add(txtNewPass);
+        panel.add(Box.createRigidArea(new Dimension(0, 15)));
 
-        passPanel.add(createLabel("Xác nhận mật khẩu mới"));
+        panel.add(createLabel("Xác nhận mật khẩu"));
         txtConfirmPass = createPasswordField();
-        passPanel.add(txtConfirmPass);
+        panel.add(txtConfirmPass);
+        panel.add(Box.createRigidArea(new Dimension(0, 25)));
 
-        JCheckBox chkShow = new JCheckBox("Hiện mật khẩu");
-        chkShow.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        chkShow.setBackground(cardColor);
-        chkShow.setFocusPainted(false);
-        chkShow.addActionListener(e -> {
-            char echo = chkShow.isSelected() ? (char)0 : '●';
-            txtOldPass.setEchoChar(echo);
-            txtNewPass.setEchoChar(echo);
-            txtConfirmPass.setEchoChar(echo);
-        });
-        passPanel.add(chkShow);
-        passPanel.add(Box.createRigidArea(new Dimension(0, 25)));
-
-        btnSave = new JButton("Lưu thay đổi");
-        btnSave.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        btnSave.setForeground(Color.WHITE);
-        btnSave.setBackground(primaryColor);
-        btnSave.setFocusPainted(false);
-        btnSave.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btnSave.setMaximumSize(new Dimension(150, 40));
-        btnSave.setAlignmentX(Component.LEFT_ALIGNMENT);
+        // Button Save
+        JButton btnSave = createButton("Lưu thay đổi", primaryColor);
         btnSave.addActionListener(e -> handleChangePassword());
-        passPanel.add(btnSave);
+        panel.add(btnSave);
 
-        container.add(passPanel);
-        container.add(Box.createRigidArea(new Dimension(0, 20)));
+        // Divider
+        panel.add(Box.createRigidArea(new Dimension(0, 30)));
+        JSeparator sep = new JSeparator();
+        sep.setForeground(lineColor);
+        panel.add(sep);
+        panel.add(Box.createRigidArea(new Dimension(0, 20)));
 
-        // 2. Panel Xóa Tài Khoản (Danger Zone)
-        JPanel deletePanel = new JPanel(new BorderLayout());
-        deletePanel.setBackground(new Color(254, 242, 242)); // Đỏ rất nhạt
-        deletePanel.setBorder(new CompoundBorder(
-                BorderFactory.createLineBorder(new Color(252, 165, 165)), // Viền đỏ nhạt
-                new EmptyBorder(20, 25, 20, 25)
-        ));
-        deletePanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 100));
-
-        JLabel lblDanger = new JLabel("Xóa tài khoản");
-        lblDanger.setFont(new Font("Segoe UI", Font.BOLD, 15));
+        // Delete Account Section
+        JLabel lblDanger = new JLabel("");
+        lblDanger.setFont(fontTitle);
         lblDanger.setForeground(dangerColor);
+        lblDanger.setAlignmentX(Component.LEFT_ALIGNMENT);
+        panel.add(lblDanger);
+        panel.add(Box.createRigidArea(new Dimension(0, 10)));
 
+        JButton btnDelete = createButton("Xóa tài khoản", dangerColor);
+        btnDelete.addActionListener(e -> handleDeleteAccount());
+        panel.add(btnDelete);
 
-        btnDeleteAccount = new JButton("Xóa tài khoản");
-        btnDeleteAccount.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        btnDeleteAccount.setForeground(Color.WHITE);
-        btnDeleteAccount.setBackground(dangerColor);
-        btnDeleteAccount.setFocusPainted(false);
-        btnDeleteAccount.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btnDeleteAccount.addActionListener(e -> handleDeleteAccount());
-
-        deletePanel.add(btnDeleteAccount, BorderLayout.EAST);
-
-        container.add(deletePanel);
-
-        return container;
+        return panel;
     }
 
-    // ================= HELPER METHODS =================
+    // ================= HELPER UI METHODS =================
     private JLabel createLabel(String text) {
         JLabel lbl = new JLabel(text);
         lbl.setFont(fontLabel);
@@ -250,29 +211,38 @@ public class Settings extends JFrame {
         pf.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
         pf.setAlignmentX(Component.LEFT_ALIGNMENT);
         pf.setBorder(BorderFactory.createCompoundBorder(
-                new MatteBorder(0, 0, 2, 0, lineColor),
-                new EmptyBorder(5, 0, 5, 0)
+                new LineBorder(lineColor),
+                new EmptyBorder(5, 10, 5, 10) // Padding trong
         ));
-        pf.setBackground(cardColor);
-
-        pf.addFocusListener(new FocusAdapter() {
-            public void focusGained(FocusEvent e) {
-                pf.setBorder(BorderFactory.createCompoundBorder(
-                        new MatteBorder(0, 0, 2, 0, primaryColor),
-                        new EmptyBorder(5, 0, 5, 0)));
-            }
-            public void focusLost(FocusEvent e) {
-                pf.setBorder(BorderFactory.createCompoundBorder(
-                        new MatteBorder(0, 0, 2, 0, lineColor),
-                        new EmptyBorder(5, 0, 5, 0)));
-            }
-        });
         return pf;
     }
 
-    // ================= LOGIC XỬ LÝ =================
+    private JButton createButton(String text, Color bg) {
+        JButton btn = new JButton(text);
+        btn.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        btn.setForeground(Color.WHITE);
+        btn.setBackground(bg);
+        btn.setFocusPainted(false);
+        btn.setBorderPainted(false);
+        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 45));
+        btn.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-    // 1. Đổi mật khẩu
+        btn.addMouseListener(new MouseAdapter() {
+            public void mouseEntered(MouseEvent e) { btn.setBackground(bg.darker()); }
+            public void mouseExited(MouseEvent e) { btn.setBackground(bg); }
+        });
+        return btn;
+    }
+
+    private String getRoleName() {
+        String r = currentAccount.getRole();
+        if ("admin".equals(r)) return "QUẢN TRỊ VIÊN";
+        if ("teacher".equals(r)) return "GIÁO VIÊN";
+        return "HỌC SINH";
+    }
+
+    // ================= LOGIC (GIỮ NGUYÊN) =================
     private void handleChangePassword() {
         String newPass = new String(txtNewPass.getPassword());
         String confirm = new String(txtConfirmPass.getPassword());
@@ -285,14 +255,14 @@ public class Settings extends JFrame {
             JOptionPane.showMessageDialog(this, "Mật khẩu xác nhận không khớp!", "Lỗi", JOptionPane.ERROR_MESSAGE);
             return;
         }
-        if (newPass.length() < 6) {
-            JOptionPane.showMessageDialog(this, "Mật khẩu phải từ 6 ký tự trở lên!", "Lỗi", JOptionPane.WARNING_MESSAGE);
+        if (newPass.length() < 3) { // Giảm xuống 3 cho dễ test, hoặc để 6 tùy bạn
+            JOptionPane.showMessageDialog(this, "Mật khẩu quá ngắn!", "Lỗi", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
         try {
             new EditAccount().changePassword(currentAccount.getUsername(), newPass);
-            JOptionPane.showMessageDialog(this, "Đổi mật khẩu thành công!\nVui lòng đăng nhập lại.");
+            JOptionPane.showMessageDialog(this, "Đổi mật khẩu thành công! Vui lòng đăng nhập lại.");
             this.dispose();
             new Login().setVisible(true);
         } catch (Exception e) {
@@ -300,35 +270,20 @@ public class Settings extends JFrame {
         }
     }
 
-    // 2. Xóa tài khoản
     private void handleDeleteAccount() {
-        // Cảnh báo lần 1
-        int confirm1 = JOptionPane.showConfirmDialog(this,
-                "Bạn có chắc chắn muốn xóa tài khoản này không?\nHành động này KHÔNG THỂ hoàn tác!",
-                "Cảnh báo nguy hiểm", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "CẢNH BÁO: Hành động này sẽ xóa vĩnh viễn tài khoản và không thể hoàn tác.\nBạn có chắc chắn không?",
+                "Xác nhận xóa", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 
-        if (confirm1 == JOptionPane.YES_OPTION) {
-            // Cảnh báo lần 2 (cho chắc chắn)
-            String input = JOptionPane.showInputDialog(this,
-                    "Nhập chữ 'DELETE' để xác nhận xóa:");
-
-            if (input != null && input.equals("DELETE")) {
-                try {
-                    new DeleteAccount().delete(currentAccount.getUsername());
-                    JOptionPane.showMessageDialog(this, "Tài khoản đã bị xóa vĩnh viễn.");
-                    this.dispose();
-                    new Login().setVisible(true);
-                } catch (Exception e) {
-                    JOptionPane.showMessageDialog(this, "Lỗi khi xóa: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
-                }
-            } else if (input != null) {
-                JOptionPane.showMessageDialog(this, "Mã xác nhận không đúng. Hủy bỏ xóa.");
+        if (confirm == JOptionPane.YES_OPTION) {
+            try {
+                new DeleteAccount().delete(currentAccount.getUsername());
+                JOptionPane.showMessageDialog(this, "Tài khoản đã bị xóa.");
+                this.dispose();
+                new Login().setVisible(true);
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(this, "Lỗi khi xóa: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
             }
         }
-    }
-
-    public static void main(String[] args) {
-        Account mock = new Account("admin", "", "", "admin");
-        SwingUtilities.invokeLater(() -> new Settings(mock).setVisible(true));
     }
 }

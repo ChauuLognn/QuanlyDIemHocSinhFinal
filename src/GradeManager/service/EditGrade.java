@@ -1,29 +1,27 @@
 package GradeManager.service;
 
-import Database.GradeDatabase; // Import đúng package Database
+import Database.GradeDatabase;
 
 public class EditGrade {
-    private GradeDatabase gradeDB = GradeDatabase.getGradeDB();
+    private GradeDatabase db = GradeDatabase.getInstance();
 
-    // Hàm sửa điểm đầy đủ (Có môn học + học kỳ)
-    public void editScore(String studentId, String subjectId, int semester, double regular, double midterm, double fin) throws Exception {
-
-        // 1. Validation cơ bản
+    public void editScore(String studentId, String subjectId, int semester, double regular, double mid, double finalScore) throws Exception {
+        // kiểm tra rỗng
         if (studentId == null || studentId.trim().isEmpty()) {
             throw new Exception("Mã học sinh không được để trống!");
         }
 
-        if (regular < 0 || regular > 10 || midterm < 0 || midterm > 10 || fin < 0 || fin > 10) {
-            throw new Exception("Điểm số phải nằm trong khoảng 0 - 10!");
+        // kiểm tra điểm hợp lệ
+        if (regular < 0 || regular > 10 || mid < 0 || mid > 10 || finalScore < 0 || finalScore > 10) {
+            throw new Exception("Điểm số phải từ 0-10!");
         }
 
-        // 2. Làm tròn điểm (1 chữ số thập phân)
+        // làm tròn
         regular = Math.round(regular * 10.0) / 10.0;
-        midterm = Math.round(midterm * 10.0) / 10.0;
-        fin = Math.round(fin * 10.0) / 10.0;
+        mid = Math.round(mid * 10.0) / 10.0;
+        finalScore = Math.round(finalScore * 10.0) / 10.0;
 
-        // 3. Gọi Database để lưu
-        // Không cần tạo object Grade hay dùng rs ở đây
-        gradeDB.saveGrade(studentId, subjectId, semester, regular, midterm, fin);
+        // lưu vào db
+        db.saveGrade(studentId, subjectId, semester, regular, mid, finalScore);
     }
 }

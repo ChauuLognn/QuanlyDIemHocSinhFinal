@@ -2,17 +2,14 @@ package AccountManager.service;
 
 import Database.AccountDatabase;
 
-
 public class DeleteAccount {
-    private AccountDatabase accountDB = AccountDatabase.getAccountDB();
+    private AccountDatabase db = AccountDatabase.getInstance();
 
     public void delete(String username) throws Exception {
-        // Kiểm tra tồn tại
         if (username == null || username.trim().isEmpty()) {
             throw new Exception("Chưa chọn tài khoản để xóa!");
         }
 
-        // Gọi DB xóa
-        accountDB.deleteAccount(username);
+        db.deleteAccount(username);
     }
 }

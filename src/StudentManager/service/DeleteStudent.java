@@ -2,29 +2,20 @@ package StudentManager.service;
 
 import StudentManager.Student;
 import Database.StudentDatabase;
-import Database.ClassDatabase;
 
 public class DeleteStudent {
-    private StudentDatabase studentDB = StudentDatabase.getStudentDB();
-    private ClassDatabase classDB = ClassDatabase.getClassDB();
+    private StudentDatabase db = StudentDatabase.getInstance();
 
     public void delete(String id) throws Exception {
-        if (id.isEmpty()) throw new Exception("Chưa chọn học sinh để xóa!");
+        if (id.isEmpty()) {
+            throw new Exception("Chưa chọn học sinh để xóa!");
+        }
 
-        // 1. Lấy thông tin học sinh trước khi xóa
-        Student s = studentDB.findByID(id);
+        Student s = db.findByID(id);
         if (s == null) {
-            throw new Exception("Không tìm thấy học sinh để xóa!");
+            throw new Exception("Không tìm thấy học sinh!");
         }
 
-        String className = s.getStudentClass();
-
-        // 2. XÓA KHỎI LỚP HỌC TRƯỚC
-        if (className != null && !className.trim().isEmpty()) {
-            classDB.removeStudentFromClass(id, className);
-        }
-
-        // 3. Xóa khỏi StudentDatabase
-        studentDB.deleteStudent(id);
+        db.deleteStudent(id);
     }
 }

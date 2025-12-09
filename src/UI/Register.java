@@ -11,30 +11,27 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
 public class Register extends JFrame {
-    // Components
     private JTextField txtUsername;
     private JPasswordField txtPassword, txtConfirmPassword;
     private JButton btnRegister;
 
-    // Colors (Đồng bộ với Login)
-    private final Color primaryColor = Color.decode("#1E40AF"); // Xanh đậm
-    private final Color accentColor  = Color.decode("#3B82F6"); // Xanh sáng
-    private final Color grayText     = Color.decode("#6B7280"); // Xám chữ
+    private final Color primaryColor = Color.decode("#1E40AF");
+    private final Color accentColor = Color.decode("#3B82F6");
+    private final Color grayText = Color.decode("#6B7280");
 
     public Register() {
         setTitle("Đăng ký tài khoản");
-        setSize(450, 650); // Cao hơn chút để chứa đủ 3 ô nhập liệu
+        setSize(450, 650);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setResizable(false);
 
-        // Panel nền trắng
         JPanel mainPanel = new JPanel();
         mainPanel.setBackground(Color.WHITE);
         mainPanel.setLayout(null);
         setContentPane(mainPanel);
 
-        // --- TIÊU ĐỀ ---
+        // title
         JLabel lblTitle = new JLabel("ĐĂNG KÝ");
         lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 28));
         lblTitle.setForeground(primaryColor);
@@ -49,7 +46,7 @@ public class Register extends JFrame {
         lblSub.setBounds(0, 80, 435, 20);
         mainPanel.add(lblSub);
 
-        // --- 1. USERNAME ---
+        // username
         JLabel lblUser = new JLabel("Tên đăng nhập");
         lblUser.setFont(new Font("Segoe UI", Font.BOLD, 13));
         lblUser.setForeground(grayText);
@@ -61,7 +58,7 @@ public class Register extends JFrame {
         txtUsername.setBounds(40, 155, 355, 35);
         mainPanel.add(txtUsername);
 
-        // --- 2. PASSWORD ---
+        // password
         JLabel lblPass = new JLabel("Mật khẩu");
         lblPass.setFont(new Font("Segoe UI", Font.BOLD, 13));
         lblPass.setForeground(grayText);
@@ -73,7 +70,7 @@ public class Register extends JFrame {
         txtPassword.setBounds(40, 235, 355, 35);
         mainPanel.add(txtPassword);
 
-        // --- 3. CONFIRM PASSWORD ---
+        // confirm password
         JLabel lblConfirm = new JLabel("Xác nhận mật khẩu");
         lblConfirm.setFont(new Font("Segoe UI", Font.BOLD, 13));
         lblConfirm.setForeground(grayText);
@@ -85,7 +82,7 @@ public class Register extends JFrame {
         txtConfirmPassword.setBounds(40, 315, 355, 35);
         mainPanel.add(txtConfirmPassword);
 
-        // Hiện mật khẩu
+        // show password
         JLabel lblShowPass = new JLabel("Hiện mật khẩu");
         lblShowPass.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         lblShowPass.setForeground(accentColor);
@@ -103,7 +100,7 @@ public class Register extends JFrame {
         });
         mainPanel.add(lblShowPass);
 
-        // --- 4. BUTTON REGISTER (CUSTOM PAINT) ---
+        // button register
         btnRegister = new JButton("ĐĂNG KÝ TÀI KHOẢN") {
             @Override
             protected void paintComponent(Graphics g) {
@@ -126,11 +123,10 @@ public class Register extends JFrame {
         btnRegister.setBorderPainted(false);
         btnRegister.setFocusPainted(false);
         btnRegister.setCursor(new Cursor(Cursor.HAND_CURSOR));
-
         btnRegister.addActionListener(e -> handleRegister());
         mainPanel.add(btnRegister);
 
-        // Link về Login
+        // login link
         JLabel lblLogin = new JLabel("Đã có tài khoản?");
         lblLogin.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         lblLogin.setForeground(grayText);
@@ -153,18 +149,15 @@ public class Register extends JFrame {
         getRootPane().setDefaultButton(btnRegister);
     }
 
-    // ================= HELPER: STYLE TEXT FIELD =================
     private void styleTextField(JTextField tf) {
         tf.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         tf.setForeground(Color.BLACK);
-        // Viền dưới màu xám nhạt
         tf.setBorder(BorderFactory.createCompoundBorder(
                 new MatteBorder(0, 0, 2, 0, new Color(220, 220, 220)),
                 BorderFactory.createEmptyBorder(5, 5, 5, 5)
         ));
         tf.setBackground(Color.WHITE);
 
-        // Hiệu ứng focus đổi màu xanh
         tf.addFocusListener(new FocusAdapter() {
             @Override
             public void focusGained(FocusEvent e) {
@@ -184,32 +177,25 @@ public class Register extends JFrame {
         });
     }
 
-    // ================= LOGIC XỬ LÝ =================
     private void handleRegister() {
         try {
             String user = txtUsername.getText().trim();
             String pass = new String(txtPassword.getPassword());
             String confirm = new String(txtConfirmPassword.getPassword());
-
-            // Tự động gán ID = Username (Theo logic cũ)
             String id = user;
 
             AddAccount service = new AddAccount();
-            service.addNewAccount(user, pass, confirm, id);
+            service.addAccount(user, pass, confirm, id);
 
             JOptionPane.showMessageDialog(this, "Đăng ký thành công! Hãy đăng nhập.");
             this.dispose();
             new Login().setVisible(true);
-
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, ex.getMessage(), "Lỗi đăng ký", JOptionPane.ERROR_MESSAGE);
         }
     }
 
     public static void main(String[] args) {
-        try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (Exception ignored) {}
         SwingUtilities.invokeLater(() -> new Register().setVisible(true));
     }
 }

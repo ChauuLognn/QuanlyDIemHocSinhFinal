@@ -5,10 +5,10 @@ import Database.AccountDatabase;
 import Exception.Validator;
 
 public class AddAccount {
-    private AccountDatabase accountDB = AccountDatabase.getAccountDB();
+    private AccountDatabase db = AccountDatabase.getInstance();
 
-    public void addNewAccount(String username, String password, String confirmPass, String id) throws Exception {
-        // 1. Kiểm tra rỗng
+    public void addAccount(String username, String password, String confirmPass, String id) throws Exception {
+        // kiểm tra rỗng
         if (username == null || username.trim().isEmpty()) {
             throw new Exception("Username không được để trống!");
         }
@@ -22,31 +22,26 @@ public class AddAccount {
             throw new Exception("ID không được để trống!");
         }
 
-        try {
-            Validator.validateUsername(username.trim());
-            Validator.validatePassword(password);
-            Validator.validateID(id.trim());
-        } catch (Exception e) {
-            throw new Exception(e.getMessage());
-        }
+        // validate
+        Validator.validateUsername(username.trim());
+        Validator.validatePassword(password);
+        Validator.validateID(id.trim());
 
-        // 3. Kiểm tra mật khẩu khớp
+        // kiểm tra mật khẩu khớp
         if (!password.equals(confirmPass)) {
             throw new Exception("Mật khẩu xác nhận không khớp!");
         }
 
-        // 4. ✅ THÊM: Kiểm tra username không chứa khoảng trắng
+        // kiểm tra khoảng trắng
         if (username.contains(" ")) {
             throw new Exception("Username không được chứa khoảng trắng!");
         }
 
-        // 6. Mã hóa mật khẩu trước khi lưu
-        String hashedPassword = accountDB.hashSHA256(password);
+        // mã hóa mật khẩu
+        String hashedPassword = db.hashPassword(password);
 
-        // 7. Tạo đối tượng và gửi xuống Database
+        // tạo tài khoản
         Account newAcc = new Account(username.trim(), hashedPassword, id.trim());
-
-        // Hàm này bên Database sẽ ném lỗi nếu trùng user
-        accountDB.addAccount(newAcc);
+        db.addAccount(newAcc);
     }
 }

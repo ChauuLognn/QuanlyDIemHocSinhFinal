@@ -15,20 +15,18 @@ import java.awt.event.MouseEvent;
 public class Settings extends JFrame {
     private Account currentAccount;
 
-    // --- COLORS & FONTS ---
-    private final Color primaryColor = Color.decode("#1E40AF"); // Xanh đậm
-    private final Color bgColor      = Color.decode("#F3F4F6"); // Xám nền
-    private final Color cardColor    = Color.WHITE;             // Trắng
-    private final Color textColor    = Color.decode("#111827"); // Đen chữ
-    private final Color grayText     = Color.decode("#6B7280"); // Xám chữ
-    private final Color lineColor    = Color.decode("#E5E7EB"); // Viền
-    private final Color dangerColor  = Color.decode("#EF4444"); // Đỏ
+    private final Color primaryColor = Color.decode("#1E40AF");
+    private final Color bgColor = Color.decode("#F3F4F6");
+    private final Color cardColor = Color.WHITE;
+    private final Color textColor = Color.decode("#111827");
+    private final Color grayText = Color.decode("#6B7280");
+    private final Color lineColor = Color.decode("#E5E7EB");
+    private final Color dangerColor = Color.decode("#EF4444");
 
     private final Font fontTitle = new Font("Segoe UI", Font.BOLD, 16);
     private final Font fontLabel = new Font("Segoe UI", Font.BOLD, 13);
     private final Font fontInput = new Font("Segoe UI", Font.PLAIN, 14);
 
-    // Components
     private JPasswordField txtOldPass, txtNewPass, txtConfirmPass;
 
     public Settings(Account account) {
@@ -40,24 +38,18 @@ public class Settings extends JFrame {
         setLocationRelativeTo(null);
         setLayout(new BorderLayout());
 
-        // 1. Top Bar
         add(createTopBar(), BorderLayout.NORTH);
 
-        // 2. Main Content (Chia 2 cột)
-        JPanel mainPanel = new JPanel(new GridLayout(1, 2, 30, 0)); // 1 hàng, 2 cột, cách nhau 30px
+        JPanel mainPanel = new JPanel(new GridLayout(1, 2, 30, 0));
         mainPanel.setBackground(bgColor);
         mainPanel.setBorder(new EmptyBorder(30, 40, 30, 40));
 
-        // Cột Trái: Profile
         mainPanel.add(createProfilePanel());
-
-        // Cột Phải: Đổi mật khẩu & Xóa
         mainPanel.add(createSecurityPanel());
 
         add(mainPanel, BorderLayout.CENTER);
     }
 
-    // ================= 1. TOP BAR =================
     private JPanel createTopBar() {
         JPanel navbar = new JPanel(new BorderLayout());
         navbar.setPreferredSize(new Dimension(0, 60));
@@ -70,7 +62,6 @@ public class Settings extends JFrame {
         title.setBorder(new EmptyBorder(0, 15, 0, 0));
         navbar.add(title, BorderLayout.WEST);
 
-        // Nút Quay lại
         JButton btnBack = new JButton("← Dashboard");
         btnBack.setFont(new Font("Segoe UI", Font.BOLD, 13));
         btnBack.setForeground(grayText);
@@ -80,8 +71,13 @@ public class Settings extends JFrame {
         btnBack.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
         btnBack.addMouseListener(new MouseAdapter() {
-            public void mouseEntered(MouseEvent e) { btnBack.setForeground(primaryColor); }
-            public void mouseExited(MouseEvent e) { btnBack.setForeground(grayText); }
+            public void mouseEntered(MouseEvent e) {
+                btnBack.setForeground(primaryColor);
+            }
+
+            public void mouseExited(MouseEvent e) {
+                btnBack.setForeground(grayText);
+            }
         });
 
         btnBack.addActionListener(e -> {
@@ -93,7 +89,6 @@ public class Settings extends JFrame {
         return navbar;
     }
 
-    // ================= 2. LEFT PANEL (PROFILE) =================
     private JPanel createProfilePanel() {
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
@@ -103,18 +98,15 @@ public class Settings extends JFrame {
                 new EmptyBorder(30, 20, 30, 20)
         ));
 
-        // Avatar Icon
         JLabel lblAvatar = new JLabel("👤", JLabel.CENTER);
         lblAvatar.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 100));
         lblAvatar.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        // Username
         JLabel lblUser = new JLabel(currentAccount.getUsername(), JLabel.CENTER);
         lblUser.setFont(new Font("Segoe UI", Font.BOLD, 24));
         lblUser.setForeground(textColor);
         lblUser.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        // Role Badge
         JLabel lblRole = new JLabel(getRoleName(), JLabel.CENTER);
         lblRole.setFont(new Font("Segoe UI", Font.BOLD, 12));
         lblRole.setForeground(Color.WHITE);
@@ -123,7 +115,6 @@ public class Settings extends JFrame {
         lblRole.setBorder(new EmptyBorder(5, 15, 5, 15));
         lblRole.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        // Add components with spacing
         panel.add(Box.createVerticalGlue());
         panel.add(lblAvatar);
         panel.add(Box.createRigidArea(new Dimension(0, 20)));
@@ -135,7 +126,6 @@ public class Settings extends JFrame {
         return panel;
     }
 
-    // ================= 3. RIGHT PANEL (SECURITY) =================
     private JPanel createSecurityPanel() {
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
@@ -145,7 +135,6 @@ public class Settings extends JFrame {
                 new EmptyBorder(25, 30, 25, 30)
         ));
 
-        // Header
         JLabel lblHead = new JLabel("ĐỔI MẬT KHẨU");
         lblHead.setFont(fontTitle);
         lblHead.setForeground(primaryColor);
@@ -153,7 +142,6 @@ public class Settings extends JFrame {
         panel.add(lblHead);
         panel.add(Box.createRigidArea(new Dimension(0, 20)));
 
-        // Fields
         panel.add(createLabel("Mật khẩu hiện tại"));
         txtOldPass = createPasswordField();
         panel.add(txtOldPass);
@@ -169,19 +157,16 @@ public class Settings extends JFrame {
         panel.add(txtConfirmPass);
         panel.add(Box.createRigidArea(new Dimension(0, 25)));
 
-        // Button Save
         JButton btnSave = createButton("Lưu thay đổi", primaryColor);
         btnSave.addActionListener(e -> handleChangePassword());
         panel.add(btnSave);
 
-        // Divider
         panel.add(Box.createRigidArea(new Dimension(0, 30)));
         JSeparator sep = new JSeparator();
         sep.setForeground(lineColor);
         panel.add(sep);
         panel.add(Box.createRigidArea(new Dimension(0, 20)));
 
-        // Delete Account Section
         JLabel lblDanger = new JLabel("");
         lblDanger.setFont(fontTitle);
         lblDanger.setForeground(dangerColor);
@@ -196,7 +181,6 @@ public class Settings extends JFrame {
         return panel;
     }
 
-    // ================= HELPER UI METHODS =================
     private JLabel createLabel(String text) {
         JLabel lbl = new JLabel(text);
         lbl.setFont(fontLabel);
@@ -212,7 +196,7 @@ public class Settings extends JFrame {
         pf.setAlignmentX(Component.LEFT_ALIGNMENT);
         pf.setBorder(BorderFactory.createCompoundBorder(
                 new LineBorder(lineColor),
-                new EmptyBorder(5, 10, 5, 10) // Padding trong
+                new EmptyBorder(5, 10, 5, 10)
         ));
         return pf;
     }
@@ -229,8 +213,13 @@ public class Settings extends JFrame {
         btn.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         btn.addMouseListener(new MouseAdapter() {
-            public void mouseEntered(MouseEvent e) { btn.setBackground(bg.darker()); }
-            public void mouseExited(MouseEvent e) { btn.setBackground(bg); }
+            public void mouseEntered(MouseEvent e) {
+                btn.setBackground(bg.darker());
+            }
+
+            public void mouseExited(MouseEvent e) {
+                btn.setBackground(bg);
+            }
         });
         return btn;
     }
@@ -242,7 +231,6 @@ public class Settings extends JFrame {
         return "HỌC SINH";
     }
 
-    // ================= LOGIC (GIỮ NGUYÊN) =================
     private void handleChangePassword() {
         String newPass = new String(txtNewPass.getPassword());
         String confirm = new String(txtConfirmPass.getPassword());
@@ -255,7 +243,7 @@ public class Settings extends JFrame {
             JOptionPane.showMessageDialog(this, "Mật khẩu xác nhận không khớp!", "Lỗi", JOptionPane.ERROR_MESSAGE);
             return;
         }
-        if (newPass.length() < 3) { // Giảm xuống 3 cho dễ test, hoặc để 6 tùy bạn
+        if (newPass.length() < 3) {
             JOptionPane.showMessageDialog(this, "Mật khẩu quá ngắn!", "Lỗi", JOptionPane.WARNING_MESSAGE);
             return;
         }

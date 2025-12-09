@@ -4,7 +4,7 @@ import ClassManager.Classes;
 import Database.ClassDatabase;
 
 public class AddClass {
-    private ClassDatabase classDB = ClassDatabase.getClassDB();
+    private ClassDatabase db = ClassDatabase.getInstance();
 
     public void add(String id, String name) throws Exception {
         if (id.isEmpty() || name.isEmpty()) {
@@ -12,6 +12,6 @@ public class AddClass {
         }
 
         Classes newClass = new Classes(name, id);
-        classDB.addNewClass(newClass);
+        db.addClass(newClass);
     }
 }

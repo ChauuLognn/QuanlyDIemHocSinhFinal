@@ -20,27 +20,23 @@ import java.util.ArrayList;
 public class ClassManagement extends JFrame {
     private Account currentAccount;
 
-    // --- COLORS & FONTS ---
-    private final Color primaryColor = Color.decode("#1E40AF"); // Xanh đậm
-    private final Color bgColor      = Color.decode("#F3F4F6"); // Nền xám nhạt
-    private final Color cardColor    = Color.WHITE;             // Nền trắng
-    private final Color textColor    = Color.decode("#111827"); // Chữ đen
-    private final Color grayText     = Color.decode("#6B7280"); // Chữ xám
-    private final Color lineColor    = Color.decode("#E5E7EB"); // Viền xám
+    private final Color primaryColor = Color.decode("#1E40AF");
+    private final Color bgColor = Color.decode("#F3F4F6");
+    private final Color cardColor = Color.WHITE;
+    private final Color textColor = Color.decode("#111827");
+    private final Color grayText = Color.decode("#6B7280");
+    private final Color lineColor = Color.decode("#E5E7EB");
 
     private final Font fontBold = new Font("Segoe UI", Font.BOLD, 13);
     private final Font fontPlain = new Font("Segoe UI", Font.PLAIN, 13);
 
-    // Components
     private DefaultTableModel tableModel;
     private JTable table;
     private JTextField txtSearch;
     private TableRowSorter<DefaultTableModel> rowSorter;
 
-    // Input fields
     private JTextField txtClassId, txtClassName;
 
-    // Buttons
     private JButton btnAdd, btnUpdate, btnDelete, btnClear;
 
     public ClassManagement(Account account) {
@@ -52,27 +48,21 @@ public class ClassManagement extends JFrame {
         setLocationRelativeTo(null);
         setLayout(new BorderLayout());
 
-        // 1. Top Bar
         add(createTopBar(), BorderLayout.NORTH);
 
-        // 2. Main Content (Split Layout)
         JPanel mainPanel = new JPanel(new BorderLayout(20, 0));
         mainPanel.setBackground(bgColor);
         mainPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
 
-        // Trái: Form nhập liệu
         mainPanel.add(createLeftPanel(), BorderLayout.WEST);
 
-        // Giữa: Bảng danh sách
         mainPanel.add(createRightPanel(), BorderLayout.CENTER);
 
         add(mainPanel, BorderLayout.CENTER);
 
-        // Load dữ liệu
         loadDataFromDatabase();
     }
 
-    // ================= 1. TOP BAR =================
     private JPanel createTopBar() {
         JPanel navbar = new JPanel(new BorderLayout());
         navbar.setPreferredSize(new Dimension(0, 60));
@@ -94,8 +84,13 @@ public class ClassManagement extends JFrame {
         btnBack.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
         btnBack.addMouseListener(new MouseAdapter() {
-            public void mouseEntered(MouseEvent e) { btnBack.setForeground(primaryColor); }
-            public void mouseExited(MouseEvent e) { btnBack.setForeground(grayText); }
+            public void mouseEntered(MouseEvent e) {
+                btnBack.setForeground(primaryColor);
+            }
+
+            public void mouseExited(MouseEvent e) {
+                btnBack.setForeground(grayText);
+            }
         });
 
         btnBack.addActionListener(e -> {
@@ -107,7 +102,6 @@ public class ClassManagement extends JFrame {
         return navbar;
     }
 
-    // ================= 2. LEFT PANEL (INPUT & BUTTONS) =================
     private JPanel createLeftPanel() {
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
@@ -118,7 +112,6 @@ public class ClassManagement extends JFrame {
                 new EmptyBorder(25, 25, 25, 25)
         ));
 
-        // --- Header ---
         JLabel lblTitle = new JLabel("THÔNG TIN LỚP");
         lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 14));
         lblTitle.setForeground(primaryColor);
@@ -126,7 +119,6 @@ public class ClassManagement extends JFrame {
         panel.add(lblTitle);
         panel.add(Box.createRigidArea(new Dimension(0, 20)));
 
-        // --- Fields ---
         panel.add(createLabel("Mã lớp"));
         txtClassId = createTextField();
         panel.add(txtClassId);
@@ -136,18 +128,16 @@ public class ClassManagement extends JFrame {
         txtClassName = createTextField();
         panel.add(txtClassName);
 
-        // Đẩy nút xuống dưới cùng
         panel.add(Box.createVerticalGlue());
 
-        // --- Buttons Grid ---
-        JPanel btnGrid = new JPanel(new GridLayout(2, 2, 10, 10)); // 2 hàng 2 cột
+        JPanel btnGrid = new JPanel(new GridLayout(2, 2, 10, 10));
         btnGrid.setBackground(cardColor);
         btnGrid.setMaximumSize(new Dimension(Integer.MAX_VALUE, 90));
 
-        btnAdd = createButton("Thêm", Color.decode("#10B981"));    // Xanh lá
-        btnUpdate = createButton("Sửa", Color.decode("#3B82F6"));  // Xanh dương
-        btnDelete = createButton("Xóa", Color.decode("#EF4444"));  // Đỏ
-        btnClear = createButton("Mới", grayText);                  // Xám
+        btnAdd = createButton("Thêm", Color.decode("#10B981"));
+        btnUpdate = createButton("Sửa", Color.decode("#3B82F6"));
+        btnDelete = createButton("Xóa", Color.decode("#EF4444"));
+        btnClear = createButton("Mới", grayText);
 
         btnAdd.addActionListener(e -> addClass());
         btnUpdate.addActionListener(e -> updateClass());
@@ -164,12 +154,10 @@ public class ClassManagement extends JFrame {
         return panel;
     }
 
-    // ================= 3. RIGHT PANEL (TABLE) =================
     private JPanel createRightPanel() {
         JPanel panel = new JPanel(new BorderLayout(0, 15));
         panel.setBackground(bgColor);
 
-        // --- Search Bar ---
         JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
         searchPanel.setBackground(cardColor);
         searchPanel.setBorder(BorderFactory.createCompoundBorder(
@@ -196,17 +184,17 @@ public class ClassManagement extends JFrame {
         searchPanel.add(lblSearch);
         searchPanel.add(txtSearch);
 
-        // Container để không bị giãn
         JPanel topContainer = new JPanel(new BorderLayout());
         topContainer.setBackground(bgColor);
         topContainer.add(searchPanel, BorderLayout.WEST);
 
         panel.add(topContainer, BorderLayout.NORTH);
 
-        // --- Table ---
         String[] cols = {"Mã lớp", "Tên lớp", "Sĩ số hiện tại"};
         tableModel = new DefaultTableModel(cols, 0) {
-            public boolean isCellEditable(int row, int col) { return false; }
+            public boolean isCellEditable(int row, int col) {
+                return false;
+            }
         };
 
         table = new JTable(tableModel);
@@ -220,7 +208,6 @@ public class ClassManagement extends JFrame {
         rowSorter = new TableRowSorter<>(tableModel);
         table.setRowSorter(rowSorter);
 
-        // Header Style
         JTableHeader header = table.getTableHeader();
         header.setPreferredSize(new Dimension(0, 45));
         header.setFont(fontBold);
@@ -228,10 +215,9 @@ public class ClassManagement extends JFrame {
         header.setForeground(grayText);
         header.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, lineColor));
 
-        // Center Align
         DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
         centerRenderer.setHorizontalAlignment(JLabel.CENTER);
-        for(int i=0; i<table.getColumnCount(); i++) {
+        for (int i = 0; i < table.getColumnCount(); i++) {
             table.getColumnModel().getColumn(i).setCellRenderer(centerRenderer);
         }
 
@@ -241,18 +227,16 @@ public class ClassManagement extends JFrame {
 
         panel.add(scroll, BorderLayout.CENTER);
 
-        // Click Event
         table.addMouseListener(new MouseAdapter() {
             public void mouseClicked(MouseEvent e) {
                 int row = table.getSelectedRow();
-                if(row >= 0) loadDataToForm(table.convertRowIndexToModel(row));
+                if (row >= 0) loadDataToForm(table.convertRowIndexToModel(row));
             }
         });
 
         return panel;
     }
 
-    // ================= HELPER METHODS =================
     private JLabel createLabel(String text) {
         JLabel lbl = new JLabel(text);
         lbl.setFont(new Font("Segoe UI", Font.PLAIN, 13));
@@ -283,17 +267,20 @@ public class ClassManagement extends JFrame {
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
         btn.addMouseListener(new MouseAdapter() {
-            public void mouseEntered(MouseEvent e) { if(btn.isEnabled()) btn.setBackground(color.darker()); }
-            public void mouseExited(MouseEvent e) { if(btn.isEnabled()) btn.setBackground(color); }
+            public void mouseEntered(MouseEvent e) {
+                if (btn.isEnabled()) btn.setBackground(color.darker());
+            }
+
+            public void mouseExited(MouseEvent e) {
+                if (btn.isEnabled()) btn.setBackground(color);
+            }
         });
         return btn;
     }
 
-    // ================= LOGIC =================
     private void loadDataFromDatabase() {
         tableModel.setRowCount(0);
-        ClassDatabase.getClassDB().syncAllClassesStudentCount();
-        ArrayList<Classes> list = ClassDatabase.getClassDB().getAllClasses();
+        ArrayList<Classes> list = ClassDatabase.getInstance().getAllClasses();
 
         for (Classes c : list) {
             tableModel.addRow(new Object[]{
@@ -308,7 +295,10 @@ public class ClassManagement extends JFrame {
         try {
             String id = txtClassId.getText().trim();
             String name = txtClassName.getText().trim();
-            if(id.isEmpty() || name.isEmpty()){ JOptionPane.showMessageDialog(this, "Vui lòng nhập đủ thông tin!"); return; }
+            if (id.isEmpty() || name.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Vui lòng nhập đủ thông tin!");
+                return;
+            }
 
             AddClass service = new AddClass();
             service.add(id, name);
@@ -323,7 +313,10 @@ public class ClassManagement extends JFrame {
 
     private void updateClass() {
         int row = table.getSelectedRow();
-        if(row < 0) { JOptionPane.showMessageDialog(this, "Vui lòng chọn lớp để sửa!"); return; }
+        if (row < 0) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn lớp để sửa!");
+            return;
+        }
 
         try {
             int modelRow = table.convertRowIndexToModel(row);
@@ -344,7 +337,10 @@ public class ClassManagement extends JFrame {
 
     private void deleteClass() {
         int row = table.getSelectedRow();
-        if(row < 0) { JOptionPane.showMessageDialog(this, "Vui lòng chọn lớp để xóa!"); return; }
+        if (row < 0) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn lớp để xóa!");
+            return;
+        }
 
         if (JOptionPane.showConfirmDialog(this, "Bạn chắc chắn muốn xóa lớp này?", "Xác nhận", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
             try {
@@ -369,11 +365,11 @@ public class ClassManagement extends JFrame {
     }
 
     private void clearForm() {
-        txtClassId.setText(""); txtClassName.setText("");
+        txtClassId.setText("");
+        txtClassName.setText("");
         table.clearSelection();
     }
 
-    // Main Test
     public static void main(String[] args) {
         Account mock = new Account("admin", "", "", "admin");
         SwingUtilities.invokeLater(() -> new ClassManagement(mock).setVisible(true));

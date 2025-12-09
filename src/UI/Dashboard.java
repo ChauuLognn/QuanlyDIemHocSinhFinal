@@ -2,7 +2,7 @@ package UI;
 
 import AccountManager.Account;
 import Database.ClassDatabase;
-    import GradeManager.Grade;
+import GradeManager.Grade;
 import Database.GradeDatabase;
 import GradeManager.service.DashboardService;
 import StudentManager.Student;
@@ -24,22 +24,21 @@ public class Dashboard extends JFrame {
     private Account currentAccount;
 
     private final Color primaryColor = Color.decode("#1E40AF");
-    private final Color bgColor      = Color.decode("#F3F4F6");
-    private final Color cardColor    = Color.WHITE;
-    private final Color textColor    = Color.decode("#111827");
-    private final Color grayText     = Color.decode("#6B7280");
-    private final Color lineColor    = Color.decode("#E5E7EB");
-    private final Color hoverColor   = Color.decode("#EFF6FF");
+    private final Color bgColor = Color.decode("#F3F4F6");
+    private final Color cardColor = Color.WHITE;
+    private final Color textColor = Color.decode("#111827");
+    private final Color grayText = Color.decode("#6B7280");
+    private final Color lineColor = Color.decode("#E5E7EB");
+    private final Color hoverColor = Color.decode("#EFF6FF");
 
     private final Font fontTitle = new Font("Segoe UI", Font.BOLD, 24);
-    private final Font fontHead  = new Font("Segoe UI", Font.BOLD, 16);
-    private final Font fontText  = new Font("Segoe UI", Font.PLAIN, 14);
-    private final Font fontMenu  = new Font("Segoe UI", Font.BOLD, 14);
+    private final Font fontHead = new Font("Segoe UI", Font.BOLD, 16);
+    private final Font fontText = new Font("Segoe UI", Font.PLAIN, 14);
+    private final Font fontMenu = new Font("Segoe UI", Font.BOLD, 14);
 
-    // DB
-    private final StudentDatabase studentDB = StudentDatabase.getStudentDB();
-    private final GradeDatabase gradeDB = GradeDatabase.getGradeDB();
-    private final ClassDatabase classDB = ClassDatabase.getClassDB();
+    private final StudentDatabase stuDb = StudentDatabase.getInstance();
+    private final GradeDatabase gradeDb = GradeDatabase.getInstance();
+    private final ClassDatabase classDb = ClassDatabase.getInstance();
 
     public Dashboard(Account account) {
         this.currentAccount = account;
@@ -51,11 +50,10 @@ public class Dashboard extends JFrame {
 
         add(createSidebar(), BorderLayout.WEST);
 
-        // QUYẾT ĐỊNH GIAO DIỆN DỰA TRÊN VAI TRÒ
         if ("student".equals(currentAccount.getRole())) {
-            mainPanel = createStudentDashboard(); // Giao diện riêng cho HS
+            mainPanel = createStudentDashboard();
         } else {
-            mainPanel = createAdminDashboard();   // Giao diện cho Admin/GV
+            mainPanel = createAdminDashboard();
         }
 
         add(mainPanel, BorderLayout.CENTER);
@@ -69,21 +67,18 @@ public class Dashboard extends JFrame {
         return "Học sinh";
     }
 
-    // ================= SIDEBAR =================
     private JPanel createSidebar() {
         JPanel sidebar = new JPanel(null);
         sidebar.setPreferredSize(new Dimension(280, 0));
         sidebar.setBackground(cardColor);
         sidebar.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, lineColor));
 
-        // Brand
         JLabel lblBrand = new JLabel("SCHOOL ADMIN");
         lblBrand.setFont(new Font("Segoe UI", Font.BOLD, 24));
         lblBrand.setForeground(primaryColor);
         lblBrand.setBounds(30, 30, 220, 40);
         sidebar.add(lblBrand);
 
-        // User Profile
         JPanel userPanel = new JPanel(null);
         userPanel.setBackground(bgColor);
         userPanel.setBounds(20, 90, 240, 70);
@@ -112,7 +107,6 @@ public class Dashboard extends JFrame {
         userPanel.add(lblRole);
         sidebar.add(userPanel);
 
-        // --- MENU ITEMS ---
         int y = 200;
         String role = currentAccount.getRole();
 
@@ -124,7 +118,7 @@ public class Dashboard extends JFrame {
             y += 50;
         }
 
-        if ("admin".equals(role)){
+        if ("admin".equals(role)) {
             sidebar.add(createMenuBtn("Quản lý học sinh", y, false));
             y += 50;
             sidebar.add(createMenuBtn("Quản lý bảng điểm", y, false));
@@ -144,7 +138,6 @@ public class Dashboard extends JFrame {
             y += 50;
         }
 
-        // Logout
         JButton btnLogout = new JButton("Đăng xuất");
         btnLogout.setBounds(20, 750, 240, 45);
         btnLogout.setFont(fontMenu);
@@ -190,7 +183,6 @@ public class Dashboard extends JFrame {
         return btn;
     }
 
-    // ================= 1. GIAO DIỆN ADMIN / GIÁO VIÊN =================
     private JPanel createAdminDashboard() {
         JPanel content = new JPanel(null);
         content.setBackground(bgColor);
@@ -201,27 +193,29 @@ public class Dashboard extends JFrame {
         lblTitle.setBounds(40, 40, 400, 40);
         content.add(lblTitle);
 
-        int totalStudents = studentDB.getAllStudents().size();
-        int totalClasses = classDB.getAllClasses().size();
+        int totalStudents = stuDb.getAllStudents().size();
+        int totalClasses = classDb.getAllClasses().size();
 
         content.add(createCard("Tổng học sinh", String.valueOf(totalStudents), 40, 100));
         content.add(createCard("Tổng số lớp", String.valueOf(totalClasses), 300, 100));
         content.add(createCard("Năm Học", "2025-2026", 560, 100));
 
         DashboardService service = new DashboardService();
-        content.add(createListCard("Phân loại học lực", service.calculatePerformanceStats(), 40, 260, 400));
-        content.add(createListCard("Lớp học tiêu biểu (Top ĐTB)", service.calculateTopClasses(), 480, 260, 500));
+        content.add(createListCard("Phân loại học lực", service.getPerformanceStats(), 40, 260, 400));
+        content.add(createListCard("Lớp học tiêu biểu (Top ĐTB)", service.getTopClasses(), 480, 260, 500));
 
         return content;
     }
 
-    // ================= 2. GIAO DIỆN HỌC SINH (MỚI) =================
+// phần 2 tiếp tục...
+
+// tiếp phần 1
+
     private JPanel createStudentDashboard() {
         JPanel content = new JPanel(new BorderLayout());
         content.setBackground(bgColor);
         content.setBorder(new EmptyBorder(20, 20, 20, 20));
 
-        // 1. Header: Thông tin học sinh
         JPanel headerPanel = new JPanel(new BorderLayout());
         headerPanel.setBackground(cardColor);
         headerPanel.setBorder(new CompoundBorder(
@@ -229,8 +223,8 @@ public class Dashboard extends JFrame {
                 new EmptyBorder(15, 20, 15, 20)
         ));
 
-        String studentID = currentAccount.getID(); // Username chính là Mã HS
-        Student s = studentDB.findByID(studentID);
+        String studentID = currentAccount.getID();
+        Student s = stuDb.findByID(studentID);
 
         if (s != null) {
             JLabel lblHello = new JLabel("Xin chào, " + s.getStudentName());
@@ -247,14 +241,11 @@ public class Dashboard extends JFrame {
 
         content.add(headerPanel, BorderLayout.NORTH);
 
-        // 2. Tabbed Pane cho 2 Học kỳ
         JTabbedPane tabbedPane = new JTabbedPane();
         tabbedPane.setFont(fontHead);
         tabbedPane.setBackground(bgColor);
 
-        // Tạo bảng điểm cho HK1
         tabbedPane.addTab("Học kỳ 1", createSemesterPanel(studentID, 1));
-        // Tạo bảng điểm cho HK2
         tabbedPane.addTab("Học kỳ 2", createSemesterPanel(studentID, 2));
 
         content.add(tabbedPane, BorderLayout.CENTER);
@@ -262,16 +253,13 @@ public class Dashboard extends JFrame {
         return content;
     }
 
-    // Hàm tạo giao diện bảng điểm cho từng kỳ
     private JPanel createSemesterPanel(String studentID, int semester) {
         JPanel panel = new JPanel(new BorderLayout(0, 10));
         panel.setBackground(bgColor);
         panel.setBorder(new EmptyBorder(10, 0, 0, 0));
 
-        // Lấy dữ liệu từ Database
-        ArrayList<Object[]> transcript = gradeDB.getStudentTranscript(studentID, semester);
+        ArrayList<Object[]> transcript = gradeDb.getTranscript(studentID, semester);
 
-        // Column Names
         String[] columns = {"Môn học", "Hệ số", "Đ.TX", "Đ.GK", "Đ.CK", "ĐTB Môn", "Xếp loại"};
         DefaultTableModel model = new DefaultTableModel(columns, 0);
 
@@ -285,10 +273,8 @@ public class Dashboard extends JFrame {
             double m = (double) row[3];
             double f = (double) row[4];
 
-            // Tính ĐTB Môn: (TX + 2*GK + 3*CK) / 6
-            double avgSub = (r + m*2 + f*3) / 6.0;
+            double avgSub = (r + m * 2 + f * 3) / 6.0;
 
-            // Cộng dồn để tính ĐTB Học kỳ
             totalScore += avgSub * coeff;
             totalCoeff += coeff;
 
@@ -299,19 +285,17 @@ public class Dashboard extends JFrame {
             });
         }
 
-        // Tạo bảng
         JTable table = new JTable(model);
         table.setRowHeight(35);
         table.setFont(fontText);
         table.getTableHeader().setFont(fontHead);
         table.getTableHeader().setBackground(Color.decode("#E0E7FF"));
-        table.setEnabled(false); // Chỉ xem, không sửa
+        table.setEnabled(false);
 
         JScrollPane scroll = new JScrollPane(table);
         scroll.setBorder(new LineBorder(lineColor));
         panel.add(scroll, BorderLayout.CENTER);
 
-        // Footer: Hiển thị Tổng kết học kỳ
         JPanel footer = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         footer.setBackground(cardColor);
         footer.setBorder(new LineBorder(lineColor));
@@ -324,7 +308,7 @@ public class Dashboard extends JFrame {
 
         JLabel lblRank = new JLabel("  [" + classify(semesterAvg) + "]  ");
         lblRank.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        lblRank.setForeground(Color.decode("#EF4444")); // Đỏ
+        lblRank.setForeground(Color.decode("#EF4444"));
 
         footer.add(lblAvg);
         footer.add(lblRank);
@@ -340,82 +324,66 @@ public class Dashboard extends JFrame {
         return "Yếu";
     }
 
-    private void addInfoRow(JPanel p, String label, String value, int y) {
-        JLabel lblL = new JLabel(label);
-        lblL.setFont(fontText);
-        lblL.setForeground(grayText);
-        lblL.setBounds(30, y, 100, 25);
-        p.add(lblL);
-
-        JLabel lblV = new JLabel(value);
-        lblV.setFont(new Font("Segoe UI", Font.BOLD, 15));
-        lblV.setForeground(textColor);
-        lblV.setBounds(140, y, 200, 25);
-        p.add(lblV);
-    }
-
-    private void addScoreBox(JPanel p, String title, String score, int x, int y) {
-        JPanel box = new JPanel(new BorderLayout());
-        box.setBounds(x, y, 120, 70);
-        box.setBackground(bgColor);
-        box.setBorder(BorderFactory.createLineBorder(lineColor));
-
-        JLabel lblScore = new JLabel(score);
-        lblScore.setFont(new Font("Segoe UI", Font.BOLD, 24));
-        lblScore.setHorizontalAlignment(SwingConstants.CENTER);
-        lblScore.setForeground(textColor);
-
-        JLabel lblTitle = new JLabel(title);
-        lblTitle.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        lblTitle.setHorizontalAlignment(SwingConstants.CENTER);
-        lblTitle.setForeground(grayText);
-        lblTitle.setBorder(new EmptyBorder(5,0,5,0));
-
-        box.add(lblScore, BorderLayout.CENTER);
-        box.add(lblTitle, BorderLayout.SOUTH);
-        p.add(box);
-    }
-
-    // --- CÁC HÀM CŨ (CreateCard,...) GIỮ NGUYÊN ĐỂ DÙNG CHO ADMIN ---
     private JPanel createCard(String title, String value, int x, int y) {
         JPanel card = new JPanel(null);
         card.setBounds(x, y, 240, 130);
         card.setBackground(cardColor);
         card.setBorder(BorderFactory.createMatteBorder(1, 1, 4, 1, lineColor));
-        JLabel lblVal = new JLabel(value); lblVal.setFont(new Font("Segoe UI", Font.BOLD, 36)); lblVal.setForeground(primaryColor); lblVal.setBounds(25, 25, 200, 45); card.add(lblVal);
-        JLabel lblTitle = new JLabel(title); lblTitle.setFont(new Font("Segoe UI", Font.PLAIN, 14)); lblTitle.setForeground(grayText); lblTitle.setBounds(25, 80, 200, 20); card.add(lblTitle);
+        JLabel lblVal = new JLabel(value);
+        lblVal.setFont(new Font("Segoe UI", Font.BOLD, 36));
+        lblVal.setForeground(primaryColor);
+        lblVal.setBounds(25, 25, 200, 45);
+        card.add(lblVal);
+        JLabel lblTitle = new JLabel(title);
+        lblTitle.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        lblTitle.setForeground(grayText);
+        lblTitle.setBounds(25, 80, 200, 20);
+        card.add(lblTitle);
         return card;
     }
+
     private JPanel createListCard(String title, String[] items, int x, int y, int width) {
         JPanel card = new JPanel(null);
         card.setBounds(x, y, width, 450);
         card.setBackground(cardColor);
         card.setBorder(BorderFactory.createLineBorder(lineColor));
-        JLabel lblHeader = new JLabel(title); lblHeader.setFont(fontHead); lblHeader.setForeground(textColor); lblHeader.setBounds(30, 25, 300, 30);
-        JSeparator sep = new JSeparator(); sep.setBounds(30, 65, width - 60, 1); sep.setForeground(lineColor); card.add(lblHeader); card.add(sep);
-        if (items != null) { int itemY = 85; for (String item : items) { JLabel lblItem = new JLabel(item); lblItem.setFont(fontText); lblItem.setForeground(textColor); lblItem.setBounds(30, itemY, width - 60, 25); card.add(lblItem); itemY += 40; } }
+        JLabel lblHeader = new JLabel(title);
+        lblHeader.setFont(fontHead);
+        lblHeader.setForeground(textColor);
+        lblHeader.setBounds(30, 25, 300, 30);
+        JSeparator sep = new JSeparator();
+        sep.setBounds(30, 65, width - 60, 1);
+        sep.setForeground(lineColor);
+        card.add(lblHeader);
+        card.add(sep);
+        if (items != null) {
+            int itemY = 85;
+            for (String item : items) {
+                JLabel lblItem = new JLabel(item);
+                lblItem.setFont(fontText);
+                lblItem.setForeground(textColor);
+                lblItem.setBounds(30, itemY, width - 60, 25);
+                card.add(lblItem);
+                itemY += 40;
+            }
+        }
         return card;
     }
 
-    // --- LOGIC ĐIỀU HƯỚNG ---
     private void handleMenuClick(String menuName) {
         if ("Quản lý học sinh".equals(menuName)) {
             this.dispose();
             new StudentManagement(currentAccount).setVisible(true);
-        }
-        else if ("Quản lý bảng điểm".equals(menuName)) {
+        } else if ("Quản lý bảng điểm".equals(menuName)) {
             this.dispose();
             new GradeManagement(currentAccount).setVisible(true);
-        }
-        else if ("Lớp học".equals(menuName)) {
+        } else if ("Lớp học".equals(menuName)) {
             this.dispose();
             new ClassManagement(currentAccount).setVisible(true);
-        }
-        else if ("Xuất báo cáo".equals(menuName)) {
+        } else if ("Xuất báo cáo".equals(menuName)) {
             this.dispose();
             new ReportManagement(currentAccount).setVisible(true);
-        }
-        else if ("Cài đặt hệ thống".equals(menuName)) {
+        } else if ("Cài đặt hệ thống".equals(menuName)) {
             this.dispose();
             new Settings(currentAccount).setVisible(true);
         }

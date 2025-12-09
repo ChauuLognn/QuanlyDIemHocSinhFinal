@@ -3,10 +3,9 @@ package GradeManager.service;
 import Database.GradeDatabase;
 
 public class DeleteGrade {
-    private GradeDatabase gradeDB = GradeDatabase.getGradeDB();
+    private GradeDatabase db = GradeDatabase.getInstance();
 
     public void delete(String studentId) {
-        // Xóa luôn
-        gradeDB.deleteGrade(studentId);
+        db.deleteGrade(studentId);
     }
 }

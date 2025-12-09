@@ -24,29 +24,25 @@ import java.util.Map;
 public class StudentManagement extends JFrame {
     private Account currentAccount;
 
-    // --- COLORS ---
     private final Color primaryColor = Color.decode("#1E40AF");
-    private final Color bgColor      = Color.decode("#F3F4F6");
-    private final Color cardColor    = Color.WHITE;
-    private final Color textColor    = Color.decode("#111827");
-    private final Color grayText     = Color.decode("#6B7280");
-    private final Color lineColor    = Color.decode("#E5E7EB");
+    private final Color bgColor = Color.decode("#F3F4F6");
+    private final Color cardColor = Color.WHITE;
+    private final Color textColor = Color.decode("#111827");
+    private final Color grayText = Color.decode("#6B7280");
+    private final Color lineColor = Color.decode("#E5E7EB");
 
-    private final Font fontBold  = new Font("Segoe UI", Font.BOLD, 13);
+    private final Font fontBold = new Font("Segoe UI", Font.BOLD, 13);
     private final Font fontPlain = new Font("Segoe UI", Font.PLAIN, 13);
 
-    // Components
     private DefaultTableModel tableModel;
     private JTable table;
     private JTextField txtSearch;
     private TableRowSorter<DefaultTableModel> rowSorter;
     private StudentService studentService = new StudentService();
 
-    // Inputs (BỎ PHẦN ĐIỂM SỐ)
     private JTextField txtId, txtName;
     private JComboBox<String> cboClassInput, cboGender;
 
-    // Buttons
     private JButton btnAdd, btnUpdate, btnDelete, btnClear;
 
     public StudentManagement(Account account) {
@@ -63,9 +59,7 @@ public class StudentManagement extends JFrame {
         mainPanel.setBackground(bgColor);
         mainPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
 
-        // Trái: Input Form (Chỉ còn thông tin cá nhân)
         mainPanel.add(createLeftPanel(), BorderLayout.WEST);
-        // Phải: Bảng danh sách
         mainPanel.add(createRightPanel(), BorderLayout.CENTER);
 
         add(mainPanel, BorderLayout.CENTER);
@@ -73,7 +67,6 @@ public class StudentManagement extends JFrame {
         loadClassListToInput();
         loadDataFromDatabase();
 
-        // Phân quyền: Nếu là GV thì chỉ được xem, không được sửa hồ sơ (Hoặc ẩn luôn trang này tùy bạn)
         if ("teacher".equals(currentAccount.getRole())) {
             btnAdd.setEnabled(false);
             btnUpdate.setEnabled(false);
@@ -119,7 +112,6 @@ public class StudentManagement extends JFrame {
                 new EmptyBorder(25, 25, 25, 25)
         ));
 
-        // --- GROUP 1: THÔNG TIN ---
         addHeader(panel, "THÔNG TIN CÁ NHÂN");
 
         panel.add(createLabel("Mã học sinh"));
@@ -142,9 +134,8 @@ public class StudentManagement extends JFrame {
         styleComboBox(cboGender);
         panel.add(cboGender);
 
-        panel.add(Box.createVerticalGlue()); // Đẩy nút xuống đáy
+        panel.add(Box.createVerticalGlue());
 
-        // --- BUTTONS ---
         JPanel btnPanel = new JPanel(new GridLayout(2, 2, 10, 10));
         btnPanel.setBackground(cardColor);
         btnPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 90));
@@ -172,7 +163,6 @@ public class StudentManagement extends JFrame {
         JPanel panel = new JPanel(new BorderLayout(0, 15));
         panel.setBackground(bgColor);
 
-        // Search Bar
         JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
         searchPanel.setBackground(cardColor);
         searchPanel.setBorder(BorderFactory.createCompoundBorder(
@@ -189,7 +179,9 @@ public class StudentManagement extends JFrame {
         txtSearch.setBorder(null);
         txtSearch.setPreferredSize(new Dimension(250, 30));
         txtSearch.addKeyListener(new KeyAdapter() {
-            public void keyReleased(KeyEvent e) { searchStudent(); }
+            public void keyReleased(KeyEvent e) {
+                searchStudent();
+            }
         });
 
         searchPanel.add(lblSearchText);
@@ -200,10 +192,11 @@ public class StudentManagement extends JFrame {
         topContainer.add(searchPanel, BorderLayout.WEST);
         panel.add(topContainer, BorderLayout.NORTH);
 
-        // Table (Bỏ cột điểm)
         String[] columns = {"Mã HS", "Họ và Tên", "Lớp", "GT"};
         tableModel = new DefaultTableModel(columns, 0) {
-            public boolean isCellEditable(int row, int col) { return false; }
+            public boolean isCellEditable(int row, int col) {
+                return false;
+            }
         };
 
         table = new JTable(tableModel);
@@ -256,7 +249,6 @@ public class StudentManagement extends JFrame {
         return panel;
     }
 
-    // --- HELPER METHODS (Giống file cũ nhưng rút gọn) ---
     private void addHeader(JPanel p, String text) {
         JLabel lbl = new JLabel(text);
         lbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
@@ -265,6 +257,7 @@ public class StudentManagement extends JFrame {
         p.add(lbl);
         p.add(Box.createRigidArea(new Dimension(0, 10)));
     }
+
     private JLabel createLabel(String text) {
         JLabel lbl = new JLabel(text);
         lbl.setFont(new Font("Segoe UI", Font.PLAIN, 12));
@@ -272,6 +265,7 @@ public class StudentManagement extends JFrame {
         lbl.setAlignmentX(Component.LEFT_ALIGNMENT);
         return lbl;
     }
+
     private JTextField createTextField() {
         JTextField tf = new JTextField();
         tf.setFont(fontPlain);
@@ -281,17 +275,20 @@ public class StudentManagement extends JFrame {
                 BorderFactory.createLineBorder(lineColor), BorderFactory.createEmptyBorder(5, 10, 5, 10)));
         return tf;
     }
+
     private JComboBox<String> createComboBox() {
         JComboBox<String> box = new JComboBox<>();
         styleComboBox(box);
         return box;
     }
+
     private void styleComboBox(JComboBox box) {
         box.setFont(fontPlain);
         box.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
         box.setAlignmentX(Component.LEFT_ALIGNMENT);
         box.setBackground(Color.WHITE);
     }
+
     private JButton createButton(String text, Color color) {
         JButton btn = new JButton(text);
         btn.setFont(fontBold);
@@ -303,17 +300,16 @@ public class StudentManagement extends JFrame {
         return btn;
     }
 
-    // --- LOGIC ---
     private void loadClassListToInput() {
         cboClassInput.removeAllItems();
-        ArrayList<Classes> classes = ClassDatabase.getClassDB().getAllClasses();
+        ArrayList<Classes> classes = ClassDatabase.getInstance().getAllClasses();
         for (Classes c : classes) cboClassInput.addItem(c.getClassID() + " - " + c.getClassName());
     }
 
     private void loadDataFromDatabase() {
         tableModel.setRowCount(0);
         Map<String, String> classMap = new HashMap<>();
-        for (Classes c : ClassDatabase.getClassDB().getAllClasses()) classMap.put(c.getClassID(), c.getClassName());
+        for (Classes c : ClassDatabase.getInstance().getAllClasses()) classMap.put(c.getClassID(), c.getClassName());
 
         ArrayList<Student> list = studentService.getAllStudents();
         for (Student s : list) {
@@ -330,7 +326,9 @@ public class StudentManagement extends JFrame {
             loadDataFromDatabase();
             clearFields();
             JOptionPane.showMessageDialog(this, "Thêm thành công!");
-        } catch (Exception e) { JOptionPane.showMessageDialog(this, "Lỗi: " + e.getMessage()); }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Lỗi: " + e.getMessage());
+        }
     }
 
     private void updateStudent() {
@@ -343,7 +341,9 @@ public class StudentManagement extends JFrame {
             loadDataFromDatabase();
             clearFields();
             JOptionPane.showMessageDialog(this, "Cập nhật thành công!");
-        } catch (Exception e) { JOptionPane.showMessageDialog(this, "Lỗi: " + e.getMessage()); }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Lỗi: " + e.getMessage());
+        }
     }
 
     private void deleteStudent() {
@@ -356,26 +356,36 @@ public class StudentManagement extends JFrame {
                 loadDataFromDatabase();
                 clearFields();
                 JOptionPane.showMessageDialog(this, "Đã xóa!");
-            } catch (Exception e) { JOptionPane.showMessageDialog(this, "Lỗi: " + e.getMessage()); }
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(this, "Lỗi: " + e.getMessage());
+            }
         }
     }
 
     private void clearFields() {
-        txtId.setText(""); txtName.setText(""); table.clearSelection();
+        txtId.setText("");
+        txtName.setText("");
+        table.clearSelection();
     }
 
     private void loadDataToForm(int row) {
         txtId.setText(tableModel.getValueAt(row, 0).toString());
         txtName.setText(tableModel.getValueAt(row, 1).toString());
         String cid = tableModel.getValueAt(row, 2).toString();
-        for (int i=0; i<cboClassInput.getItemCount(); i++) {
-            if (cboClassInput.getItemAt(i).contains(cid)) { cboClassInput.setSelectedIndex(i); break; }
+        for (int i = 0; i < cboClassInput.getItemCount(); i++) {
+            if (cboClassInput.getItemAt(i).contains(cid)) {
+                cboClassInput.setSelectedIndex(i);
+                break;
+            }
         }
         cboGender.setSelectedItem(tableModel.getValueAt(row, 3).toString());
     }
 
     private boolean validateInput() {
-        if (txtId.getText().isEmpty()) { JOptionPane.showMessageDialog(this, "Nhập Mã HS!"); return false; }
+        if (txtId.getText().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Nhập Mã HS!");
+            return false;
+        }
         return true;
     }
 

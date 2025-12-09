@@ -3,10 +3,12 @@ package ClassManager.service;
 import Database.ClassDatabase;
 
 public class DeleteClass {
-    private ClassDatabase classDB = ClassDatabase.getClassDB();
+    private ClassDatabase db = ClassDatabase.getInstance();
 
     public void delete(String classID) throws Exception {
-        if (classID.isEmpty()) throw new Exception("Chưa chọn lớp để xóa!");
-        classDB.deleteClass(classID);
+        if (classID.isEmpty()) {
+            throw new Exception("Chưa chọn lớp để xóa!");
+        }
+        db.deleteClass(classID);
     }
 }

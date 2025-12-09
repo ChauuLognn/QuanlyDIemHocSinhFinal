@@ -18,17 +18,15 @@ public class ReportManagement extends JFrame {
     private Account currentAccount;
     private ReportService reportService = new ReportService();
 
-    // Components
     private JComboBox<String> cboClass;
     private JComboBox<Subject> cboSubject;
     private JComboBox<String> cboSemester;
 
-    // Colors & Fonts
     private final Color primaryColor = Color.decode("#1E40AF");
-    private final Color cardColor    = Color.WHITE;
-    private final Color grayText     = Color.decode("#6B7280");
-    private final Color lineColor    = Color.decode("#E5E7EB");
-    private final Font fontBold      = new Font("Segoe UI", Font.BOLD, 14);
+    private final Color cardColor = Color.WHITE;
+    private final Color grayText = Color.decode("#6B7280");
+    private final Color lineColor = Color.decode("#E5E7EB");
+    private final Font fontBold = new Font("Segoe UI", Font.BOLD, 14);
 
     public ReportManagement(Account account) {
         this.currentAccount = account;
@@ -38,29 +36,24 @@ public class ReportManagement extends JFrame {
         setLocationRelativeTo(null);
         setLayout(new BorderLayout());
 
-        // 1. TOP BAR (Tiêu đề + Nút Quay lại)
         add(createTopBar(), BorderLayout.NORTH);
 
-        // 2. MAIN CONTENT (Form chọn)
         JPanel mainPanel = new JPanel(new GridLayout(3, 2, 20, 20));
         mainPanel.setBorder(new EmptyBorder(30, 40, 30, 40));
         mainPanel.setBackground(Color.WHITE);
 
-        // Row 1: Lớp
         mainPanel.add(createLabel("Chọn Lớp học:"));
         cboClass = new JComboBox<>();
         cboClass.setBackground(Color.WHITE);
         loadClasses();
         mainPanel.add(cboClass);
 
-        // Row 2: Môn
         mainPanel.add(createLabel("Chọn Môn học:"));
         cboSubject = new JComboBox<>();
         cboSubject.setBackground(Color.WHITE);
         loadSubjects();
         mainPanel.add(cboSubject);
 
-        // Row 3: Kỳ
         mainPanel.add(createLabel("Chọn Học kỳ:"));
         cboSemester = new JComboBox<>(new String[]{"Học kỳ 1", "Học kỳ 2"});
         cboSemester.setBackground(Color.WHITE);
@@ -68,21 +61,20 @@ public class ReportManagement extends JFrame {
 
         add(mainPanel, BorderLayout.CENTER);
 
-        // 3. FOOTER (Chỉ chứa các nút Xuất file)
         JPanel footer = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 20));
         footer.setBackground(Color.WHITE);
         footer.setBorder(new EmptyBorder(0, 0, 20, 0));
 
-        JButton btnExportList = createButton("Xuất Danh Sách Lớp", Color.decode("#059669")); // Xanh lá
+        JButton btnExportList = createButton("Xuất Danh Sách Lớp", Color.decode("#059669"));
         btnExportList.addActionListener(e -> {
-            if(cboClass.getSelectedItem() == null) return;
+            if (cboClass.getSelectedItem() == null) return;
             String classID = cboClass.getSelectedItem().toString().split(" - ")[0];
             reportService.exportClassList(classID);
         });
 
-        JButton btnExportScore = createButton("Xuất Bảng Điểm", Color.decode("#2563EB")); // Xanh dương
+        JButton btnExportScore = createButton("Xuất Bảng Điểm", Color.decode("#2563EB"));
         btnExportScore.addActionListener(e -> {
-            if(cboClass.getSelectedItem() == null || cboSubject.getSelectedItem() == null) return;
+            if (cboClass.getSelectedItem() == null || cboSubject.getSelectedItem() == null) return;
             String classID = cboClass.getSelectedItem().toString().split(" - ")[0];
             Subject sub = (Subject) cboSubject.getSelectedItem();
             int semester = cboSemester.getSelectedIndex() + 1;
@@ -95,21 +87,18 @@ public class ReportManagement extends JFrame {
         add(footer, BorderLayout.SOUTH);
     }
 
-    // --- HÀM TẠO TOP BAR (GIỐNG CÁC GIAO DIỆN KHÁC) ---
     private JPanel createTopBar() {
         JPanel navbar = new JPanel(new BorderLayout());
         navbar.setPreferredSize(new Dimension(0, 60));
         navbar.setBackground(cardColor);
         navbar.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, lineColor));
 
-        // Tiêu đề bên trái
         JLabel title = new JLabel("  XUẤT BÁO CÁO HỆ THỐNG");
         title.setFont(new Font("Segoe UI", Font.BOLD, 18));
         title.setForeground(primaryColor);
         title.setBorder(new EmptyBorder(0, 15, 0, 0));
         navbar.add(title, BorderLayout.WEST);
 
-        // Nút Quay lại bên phải
         JButton btnBack = new JButton("← Dashboard");
         btnBack.setFont(new Font("Segoe UI", Font.BOLD, 13));
         btnBack.setForeground(grayText);
@@ -118,13 +107,16 @@ public class ReportManagement extends JFrame {
         btnBack.setFocusPainted(false);
         btnBack.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
-        // Hiệu ứng Hover
         btnBack.addMouseListener(new MouseAdapter() {
-            public void mouseEntered(MouseEvent e) { btnBack.setForeground(primaryColor); }
-            public void mouseExited(MouseEvent e) { btnBack.setForeground(grayText); }
+            public void mouseEntered(MouseEvent e) {
+                btnBack.setForeground(primaryColor);
+            }
+
+            public void mouseExited(MouseEvent e) {
+                btnBack.setForeground(grayText);
+            }
         });
 
-        // Sự kiện quay lại
         btnBack.addActionListener(e -> {
             this.dispose();
             new Dashboard(currentAccount).setVisible(true);
@@ -134,9 +126,8 @@ public class ReportManagement extends JFrame {
         return navbar;
     }
 
-    // --- Helper Methods ---
     private void loadClasses() {
-        ArrayList<Classes> list = ClassDatabase.getClassDB().getAllClasses();
+        ArrayList<Classes> list = ClassDatabase.getInstance().getAllClasses();
         for (Classes c : list) cboClass.addItem(c.getClassID() + " - " + c.getClassName());
     }
 
@@ -160,10 +151,14 @@ public class ReportManagement extends JFrame {
         btn.setPreferredSize(new Dimension(180, 45));
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
-        // Hover effect đơn giản
         btn.addMouseListener(new MouseAdapter() {
-            public void mouseEntered(MouseEvent e) { btn.setBackground(bg.darker()); }
-            public void mouseExited(MouseEvent e) { btn.setBackground(bg); }
+            public void mouseEntered(MouseEvent e) {
+                btn.setBackground(bg.darker());
+            }
+
+            public void mouseExited(MouseEvent e) {
+                btn.setBackground(bg);
+            }
         });
 
         return btn;

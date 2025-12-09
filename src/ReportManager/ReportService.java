@@ -4,29 +4,25 @@ import Database.DatabaseConnection;
 import javax.swing.*;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
+import java.sql.*;
 
 public class ReportService {
 
-    // --- 1. XUẤT DANH SÁCH LỚP ---
+    // xuất danh sách lớp
     public void exportClassList(String classID) {
         String fileName = "DanhSach_Lop_" + classID + ".csv";
         saveToFile(fileName, getClassListData(classID));
     }
 
-    // --- 2. XUẤT BẢNG ĐIỂM (Theo Lớp + Môn + Kỳ) ---
+    // xuất bảng điểm
     public void exportScoreBoard(String classID, String subjectID, int semester) {
         String fileName = "BangDiem_" + classID + "_" + subjectID + "_HK" + semester + ".csv";
         saveToFile(fileName, getScoreData(classID, subjectID, semester));
     }
 
-    // --- HÀM HỖ TRỢ LẤY DỮ LIỆU ---
-
+    // lấy dữ liệu danh sách lớp
     private String getClassListData(String classID) {
         StringBuilder sb = new StringBuilder();
-        // Header của file Excel
         sb.append("STT,Mã Học Sinh,Họ và Tên,Giới tính,Lớp\n");
 
         try {
@@ -40,29 +36,30 @@ public class ReportService {
             while (rs.next()) {
                 sb.append(stt++).append(",");
                 sb.append(rs.getString("studentID")).append(",");
-                sb.append("\"").append(rs.getString("studentName")).append("\","); // Bọc tên trong ngoặc kép để tránh lỗi nếu tên có dấu phẩy
+                sb.append("\"").append(rs.getString("studentName")).append("\",");
                 sb.append(rs.getString("gender")).append(",");
                 sb.append(rs.getString("studentClass")).append("\n");
             }
             conn.close();
-        } catch (Exception e) { e.printStackTrace(); }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         return sb.toString();
     }
 
+    // lấy dữ liệu bảng điểm
     private String getScoreData(String classID, String subjectID, int semester) {
         StringBuilder sb = new StringBuilder();
-        // Header
         sb.append("BẢNG ĐIỂM MÔN: ").append(subjectID).append(" - HỌC KỲ: ").append(semester).append("\n");
         sb.append("LỚP: ").append(classID).append("\n\n");
-        sb.append("STT,Mã HS,Họ Tên,Đ.TX (HS1),Đ.GK (HS2),Đ.CK (HS3),ĐTB Môn,Xếp loại\n");
+        sb.append("STT,Mã HS,Họ Tên,Đ.TX,Đ.GK,Đ.CK,ĐTB Môn,Xếp loại\n");
 
         try {
             Connection conn = DatabaseConnection.getConnection();
-            // Join Student với Grade (LEFT JOIN để lấy cả HS chưa có điểm)
             String sql = "SELECT s.studentID, s.studentName, " +
                     "COALESCE(g.regularScore, 0) as regular, " +
-                    "COALESCE(g.midtermScore, 0) as midterm, " +
-                    "COALESCE(g.finalScore, 0) as final " +
+                    "COALESCE(g.midtermScore, 0) as mid, " +
+                    "COALESCE(g.finalScore, 0) as finalScore " +
                     "FROM student s " +
                     "LEFT JOIN grade g ON s.studentID = g.studentID AND g.subjectID = ? AND g.semester = ? " +
                     "WHERE s.studentClass = ? " +
@@ -77,9 +74,9 @@ public class ReportService {
             int stt = 1;
             while (rs.next()) {
                 double r = rs.getDouble("regular");
-                double m = rs.getDouble("midterm");
-                double f = rs.getDouble("final");
-                double avg = (r + m*2 + f*3) / 6.0;
+                double m = rs.getDouble("mid");
+                double f = rs.getDouble("finalScore");
+                double avg = (r + m * 2 + f * 3) / 6.0;
 
                 sb.append(stt++).append(",");
                 sb.append(rs.getString("studentID")).append(",");
@@ -91,11 +88,13 @@ public class ReportService {
                 sb.append(classify(avg)).append("\n");
             }
             conn.close();
-        } catch (Exception e) { e.printStackTrace(); }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         return sb.toString();
     }
 
-    // Hàm xếp loại
+    // xếp loại
     private String classify(double score) {
         if (score >= 8.0) return "Giỏi";
         if (score >= 6.5) return "Khá";
@@ -103,7 +102,7 @@ public class ReportService {
         return "Yếu";
     }
 
-    // --- HÀM GHI FILE ---
+    // ghi file
     private void saveToFile(String defaultName, String content) {
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setSelectedFile(new File(defaultName));
@@ -116,7 +115,6 @@ public class ReportService {
                  OutputStreamWriter osw = new OutputStreamWriter(fos, StandardCharsets.UTF_8);
                  BufferedWriter writer = new BufferedWriter(osw)) {
 
-                // Thêm BOM để Excel nhận diện tiếng Việt UTF-8
                 writer.write("\uFEFF");
                 writer.write(content);
 

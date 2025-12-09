@@ -346,19 +346,24 @@ public class GradeManagement extends JFrame {
     private void loadDataFromDatabase() {
         tableModel.setRowCount(0);
 
+        // 1. Lấy thông tin từ bộ lọc
         int semester = cboSemester.getSelectedIndex() + 1;
-        Subject selectedSubject = (Subject) cboSubject.getSelectedItem(); // NOTE: Lấy Subject đang chọn
+        Subject selectedSubject = (Subject) cboSubject.getSelectedItem();
+
         if (selectedSubject == null) return;
-        String subjectID = selectedSubject.getId(); // NOTE: Lấy ID môn học
+        String subjectID = selectedSubject.getId();
 
-        // NOTE: Lấy điểm của môn học đó, trong học kỳ đó
-        // (Bạn cần viết hàm getGradesBySubjectAndSemester trong GradeDatabase nếu chưa có, hoặc query từng em như dưới đây)
+        // 2. Tạo Map để chuyển đổi Mã lớp -> Tên lớp (FIX LỖI LỌC LỚP TẠI ĐÂY)
+        Map<String, String> classMap = new HashMap<>();
+        for (Classes c : ClassDatabase.getClassDB().getAllClasses()) {
+            classMap.put(c.getClassID(), c.getClassName());
+        }
 
+        // 3. Lấy danh sách học sinh
         ArrayList<Student> list = new StudentService().getAllStudents();
-        StudentService service = new StudentService();
 
         for (Student s : list) {
-            // NOTE: Lấy điểm cụ thể của HS, Môn, Kỳ
+            // Lấy điểm
             Grade g = GradeDatabase.getGradeDB().getGrade(s.getStudentID(), subjectID, semester);
 
             double r=0, m=0, f=0;
@@ -368,18 +373,23 @@ public class GradeManagement extends JFrame {
                 f = g.getFinalScore();
             }
 
-            // NOTE: Tính ĐTB theo công thức cấp 2 (TX + 2*GK + 3*CK)/6
             double avg = (r + m*2 + f*3) / 6.0;
+
+            // 4. Chuyển Mã lớp (9A1) thành Tên lớp (Lớp 9A1) để khớp với bộ lọc
+            String classID = s.getStudentClass();
+            String className = classMap.getOrDefault(classID, classID);
 
             tableModel.addRow(new Object[]{
                     s.getStudentID(),
                     s.getStudentName(),
-                    s.getStudentClass(), // Hiển thị lớp (hoặc lấy từ Map nếu cần chuẩn)
+                    className, // <--- Dùng tên lớp thay vì mã lớp
                     r, m, f,
                     String.format("%.2f", avg),
-                    classify(avg) // NOTE: Hàm xếp loại
+                    classify(avg)
             });
         }
+
+        // Gọi lại filter để áp dụng ngay nếu người dùng đang chọn lớp nào đó
         filter();
     }
 

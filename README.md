@@ -1,4 +1,5 @@
 📘 Hệ Thống Quản Lý Điểm Học Sinh
+
 📌 Giới thiệu
 Hệ thống Quản Lý Điểm Học Sinh THCS được xây dựng bằng Java theo kiến trúc phân tầng, hỗ trợ quản lý thông tin liên quan đến học sinh, lớp học, môn học, điểm số và báo cáo tổng hợp. Mục tiêu là tạo ra một hệ thống dễ mở rộng, dễ bảo trì và đảm bảo tính rõ ràng, chính xác, tiện lợi.
 ________________________________________
@@ -33,16 +34,19 @@ ________________________________________
 •	MySQL Workbench
 ________________________________________
 ▶️ Hướng dẫn cài đặt & chạy chương trình
+
 1️⃣ Cài đặt MySQL
 •	Cài MySQL Server và MySQL Workbench.
 •	Mở MySQL Workbench → tạo schema mới tên: QuanLyHocSinhDB.
 •	Tạo user có quyền truy cập schema (nếu dùng root thì chỉ cần nhớ mật khẩu).
+
 2️⃣ Cấu hình kết nối CSDL trong project
 •	Mở file cấu hình kết nối (DatabaseConnection.java ).
 •	Tìm các dòng sau và chỉnh sửa thông tin:
 private static final String URL = "jdbc:mysql://localhost:3306/QuanLyHocSinhDB";
        private static final String USER = "root";  	//your_username
        private static final String PASS = "1011";	//your_password
+
 3️⃣ Import dữ liệu từ file SQL có sẵn
 Dự án đã chuẩn bị sẵn file SQL: Dump20251209.sql.
 Thực hiện import như sau:
@@ -53,6 +57,7 @@ Thực hiện import như sau:
 5.	Ở mục Default Target Schema, chọn QuanLyHocSinhDB.
 6.	Nhấn Start Import để nạp toàn bộ bảng + dữ liệu mẫu.
 (Hệ thống sẽ tự động có sẵn học sinh, lớp, môn, điểm… giúp việc test chương trình dễ dàng hơn.)
+
 4️⃣ Build & chạy project
 1.	Clone project:
 2.	git clone https://github.com/ChauuLognn/QuanlyDIemHocSinhFinal.git

@@ -66,4 +66,4 @@ ________________________________________
 •	Tích hợp cơ sở dữ liệu MySQL thay cho lưu trữ thủ công.
 •	Giao diện đồ họa (JavaFX / Swing / Web UI).
 •	Hệ thống phân quyền nâng cao (Admin / Giáo viên / Học sinh).
-•	Xuất báo cáo Excel.
+•	Xuất báo cáo Excel

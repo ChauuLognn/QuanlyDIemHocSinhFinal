@@ -1,22 +1,38 @@
-📘 Hệ Thống Quản Lý Điểm Học Sinh
+# 📘 Hệ Thống Quản Lý Điểm Học Sinh THCS
 
-📌 Giới thiệu
-Hệ thống Quản Lý Điểm Học Sinh THCS được xây dựng bằng Java theo kiến trúc phân tầng, hỗ trợ quản lý thông tin liên quan đến học sinh, lớp học, môn học, điểm số và báo cáo tổng hợp. Mục tiêu là tạo ra một hệ thống dễ mở rộng, dễ bảo trì và đảm bảo tính rõ ràng, chính xác, tiện lợi.
-________________________________________
-📁 Cấu trúc thư mục
+## 📌 Giới thiệu
+Hệ thống Quản Lý Điểm Học Sinh THCS được xây dựng bằng **Java** theo **kiến trúc phân tầng**.  
+Hệ thống hỗ trợ quản lý:
+
+- Học sinh
+- Lớp học
+- Môn học
+- Điểm số
+- Báo cáo tổng hợp
+
+🎯 Mục tiêu:  
+Tạo ra một hệ thống **dễ mở rộng – dễ bảo trì – rõ ràng – chính xác – tiện lợi**.
+
+---
+
+## 📂 Cấu trúc thư mục
+```text
 src/
-│
-├── AccountManager/      # Quản lý tài khoản đăng nhập
-├── ClassManager/        # Quản lý lớp học
-├── Database/            # Tương tác cơ sở dữ liệu nội bộ
-├── Exception/           # Các ngoại lệ tùy chỉnh
-├── GradeManager/        # Quản lý điểm số
-├── ReportManager/       # Xuất và xử lý báo cáo
-├── StudentManager/      # Quản lý học sinh
-├── SubjectManager/      # Quản lý môn học
-└── UI/                  # Giao diện hệ thống
+├── AccountManager/    # Quản lý tài khoản đăng nhập
+├── ClassManager/      # Quản lý lớp học
+├── Database/          # Tương tác cơ sở dữ liệu
+├── Exception/         # Các ngoại lệ tùy chỉnh
+├── GradeManager/      # Quản lý điểm số
+├── ReportManager/     # Xuất và xử lý báo cáo
+├── StudentManager/    # Quản lý học sinh
+├── SubjectManager/    # Quản lý môn học
+└── UI/                # Giao diện hệ thống
+
 ________________________________________
-🧩 Chức năng chính theo từng vai trò
+```
+## 🧩 Chức năng chính theo từng vai trò
+```text
+
 🔐 Quản trị viên
 •	Quản lý tài khoản
 •	Phân quyền
